@@ -1,11 +1,7 @@
-import { pagesMetadata } from '@/config/metadata'
+import { pagesMetadata } from '@/config/metadata';
 
-export const metadata = pagesMetadata.semillero
+export const metadata = pagesMetadata.semillero;
 
-export default function SemilleroLayout({
-  children
-}: {
-  children: React.ReactNode
-}) {
-  return <section>{children}</section>
+export default function SemilleroLayout({ children }: { children: React.ReactNode }) {
+  return <section>{children}</section>;
 }

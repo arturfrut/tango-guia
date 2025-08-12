@@ -1,31 +1,27 @@
-import '@/styles/globals.css'
-import { Viewport } from 'next'
-import clsx from 'clsx'
+import '@/styles/globals.css';
+import { Viewport } from 'next';
+import clsx from 'clsx';
 
-import { Providers } from './providers'
+import { Providers } from './providers';
 
-import { fontSans } from '@/config/fonts'
-import { Navbar } from '@/components/navbar'
-import { QueryProvider } from './providers/QueryProvider'
+import { fontSans } from '@/config/fonts';
+import { Navbar } from '@/components/navbar';
+import { QueryProvider } from './providers/QueryProvider';
 
-import { pagesMetadata } from '@/config/metadata'
+import { pagesMetadata } from '@/config/metadata';
 
-export const metadata = pagesMetadata.home
+export const metadata = pagesMetadata.home;
 
 export const viewport: Viewport = {
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: 'white' },
-    { media: '(prefers-color-scheme: dark)', color: 'black' }
-  ]
-}
+    { media: '(prefers-color-scheme: dark)', color: 'black' },
+  ],
+};
 
-export default function RootLayout({
-  children
-}: {
-  children: React.ReactNode
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html suppressHydrationWarning lang='en'>
+    <html suppressHydrationWarning lang="en">
       <head />
       <body
         className={clsx(
@@ -35,9 +31,9 @@ export default function RootLayout({
       >
         <Providers themeProps={{ attribute: 'class', defaultTheme: 'dark' }}>
           <QueryProvider>
-            <div className='relative flex flex-col h-screen'>
+            <div className="relative flex flex-col h-screen">
               <Navbar />
-              <main className='container mx-auto max-w-7xl md:pt-16 pt-6 px-6 flex-grow'>
+              <main className="container mx-auto max-w-7xl md:pt-16 pt-6 px-6 flex-grow">
                 {children}
               </main>
             </div>
@@ -45,5 +41,5 @@ export default function RootLayout({
         </Providers>
       </body>
     </html>
-  )
+  );
 }

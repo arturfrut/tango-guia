@@ -7,7 +7,7 @@ export enum UserRole {
   NORMAL_QUERY = 'normal_query',
   SPECIAL_STUDENT = 'special_student',
   ADMINISTRATOR = 'administrator',
-  SPECIAL_GUEST = 'special_guest'
+  SPECIAL_GUEST = 'special_guest',
 }
 
 export enum ConversationState {
@@ -27,7 +27,7 @@ export enum ConversationState {
   CREATING_EVENT_CONFIRMATION = 'creating_event_confirmation',
   EDITING_EVENT = 'editing_event',
   QUERYING_EVENTS = 'querying_events',
-  AI_NATURAL_MODE = 'ai_natural_mode'
+  AI_NATURAL_MODE = 'ai_natural_mode',
 }
 
 export enum MessageType {
@@ -37,19 +37,19 @@ export enum MessageType {
   LIST_RESPONSE = 'list_response',
   LOCATION = 'location',
   DOCUMENT = 'document',
-  AUDIO = 'audio'
+  AUDIO = 'audio',
 }
 
 export enum MessageDirection {
   INBOUND = 'inbound',
-  OUTBOUND = 'outbound'
+  OUTBOUND = 'outbound',
 }
 
 export enum MessageStatus {
   SENT = 'sent',
   DELIVERED = 'delivered',
   READ = 'read',
-  FAILED = 'failed'
+  FAILED = 'failed',
 }
 
 export enum EventType {
@@ -57,14 +57,14 @@ export enum EventType {
   CLASS = 'class',
   SEMINAR = 'seminar',
   MILONGA = 'milonga',
-  PRACTICE = 'practice'
+  PRACTICE = 'practice',
 }
 
 export enum ClassLevel {
   BEGINNER = 'beginner',
   INTERMEDIATE = 'intermediate',
   ADVANCED = 'advanced',
-  ALL_LEVELS = 'all_levels'
+  ALL_LEVELS = 'all_levels',
 }
 
 export enum RecurrencePattern {
@@ -72,7 +72,7 @@ export enum RecurrencePattern {
   DAILY = 'daily',
   WEEKLY = 'weekly',
   MONTHLY = 'monthly',
-  CUSTOM = 'custom'
+  CUSTOM = 'custom',
 }
 
 export enum DayOfWeek {
@@ -82,21 +82,21 @@ export enum DayOfWeek {
   THURSDAY = 'thursday',
   FRIDAY = 'friday',
   SATURDAY = 'saturday',
-  SUNDAY = 'sunday'
+  SUNDAY = 'sunday',
 }
 
 export enum NotificationType {
   EVENT_REMINDER = 'event_reminder',
   EVENT_CANCELLED = 'event_cancelled',
   EVENT_MODIFIED = 'event_modified',
-  MASS_MESSAGE = 'mass_message'
+  MASS_MESSAGE = 'mass_message',
 }
 
 export enum NotificationStatus {
   PENDING = 'pending',
   SENT = 'sent',
   FAILED = 'failed',
-  CANCELLED = 'cancelled'
+  CANCELLED = 'cancelled',
 }
 
 // =============================================
@@ -403,7 +403,7 @@ export interface WhatsAppWebhookMessage {
 // UTILITY TYPES
 // =============================================
 
-export type CreateTables = 
+export type CreateTables =
   | 'users'
   | 'special_students'
   | 'user_sessions'
