@@ -1,117 +1,189 @@
-import { EventWithDetails } from '@/app/types';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { format } from 'date-fns'
+import { es } from 'date-fns/locale'
+import { Card, CardBody } from '@heroui/card'
+import { Chip } from '@heroui/chip'
+import { Avatar } from '@heroui/avatar'
+import { Clock, MapPin, User } from 'lucide-react'
+import { EventWithDetails } from '@/app/types'
+import { useRouter } from 'next/navigation'
 
 interface EventCardProps {
-  event: EventWithDetails;
+  event: EventWithDetails
+  onClick?: () => void
 }
 
-export function EventCard({ event }: EventCardProps) {
-  const primarySchedule = event.event_schedules?.[0];
-  const primaryTeacher = event.event_teachers?.find((et: { is_primary_teacher: any; }) => et.is_primary_teacher)?.teacher;
-  const thumbnailImage = event.event_images?.find((img: { display_order: number; }) => img.display_order === 0) || event.event_images?.[0];
+export function EventCard({ event, onClick }: EventCardProps) {
+  const router = useRouter()
+  const primarySchedule = event.event_schedules?.[0]
+  const primaryTeacher = event.event_teachers?.find(
+    (et: { is_primary_teacher: any }) => et.is_primary_teacher
+  )?.teacher
+  const thumbnailImage =
+    event.event_images?.find(
+      (img: { display_order: number }) => img.display_order === 0
+    ) || event.event_images?.[0]
 
+  const handleCardClick = () => {
+    if (onClick) {
+      onClick()
+    } else {
+      router.push(`/agenda/${event.id}`)
+    }
+  }
   const formatEventType = (type: string) => {
     const types = {
-      'special_event': 'Evento Especial',
-      'class': 'Clase',
-      'seminar': 'Seminario',
-      'milonga': 'Milonga',
-      'practice': 'Práctica'
-    };
-    return types[type as keyof typeof types] || type;
-  };
+      special_event: 'Evento Especial',
+      class: 'Clase',
+      seminar: 'Seminario',
+      milonga: 'Milonga',
+      practice: 'Práctica'
+    }
+    return types[type as keyof typeof types] || type
+  }
 
   const formatClassLevel = (level?: string) => {
     const levels = {
-      'beginner': 'Principiante',
-      'intermediate': 'Intermedio',
-      'advanced': 'Avanzado',
-      'all_levels': 'Todos los niveles'
-    };
-    return level ? levels[level as keyof typeof levels] || level : null;
-  };
+      beginner: 'Principiante',
+      intermediate: 'Intermedio',
+      advanced: 'Avanzado',
+      all_levels: 'Todos los niveles'
+    }
+    return level ? levels[level as keyof typeof levels] || level : null
+  }
+
+  const getEventTypeColor = (type: string) => {
+    const colorMap = {
+      special_event: 'secondary',
+      class: 'primary',
+      seminar: 'success',
+      milonga: 'warning',
+      practice: 'default'
+    }
+    return colorMap[type as keyof typeof colorMap] || 'default'
+  }
+
+  const getEventTypeIcon = (type: string) => {
+    const iconMap = {
+      special_event: '🎉',
+      class: '📚',
+      seminar: '🎓',
+      milonga: '💃',
+      practice: '🔄'
+    }
+    return iconMap[type as keyof typeof iconMap] || '📅'
+  }
 
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
-      {thumbnailImage && (
-        <div className="h-48 bg-gray-200 overflow-hidden">
-          <img
-            src={thumbnailImage.image_url}
-            alt={event.title}
-            className="w-full h-full object-cover"
+    <Card
+      isPressable
+      onPress={handleCardClick}
+      className='w-full hover:scale-[1.01] transition-all duration-200 shadow-md hover:shadow-lg'
+    >
+      <CardBody className='p-5'>
+        <div className='flex items-start gap-4'>
+          {/* Avatar con imagen o inicial */}
+          <Avatar
+            src={thumbnailImage?.image_url}
+            name={event.title}
+            className='w-16 h-16 text-lg font-bold flex-shrink-0'
+            classNames={{
+              base: thumbnailImage
+                ? ''
+                : 'bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500',
+              name: 'text-white font-bold text-sm'
+            }}
           />
-        </div>
-      )}
-      
-      <div className="p-4">
-        <div className="flex items-start justify-between mb-2">
-          <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">
-            {event.title}
-          </h3>
-          <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full whitespace-nowrap ml-2">
-            {formatEventType(event.event_type)}
-          </span>
-        </div>
 
-        {event.description && (
-          <p className="text-gray-600 text-sm mb-3 line-clamp-2">
-            {event.description}
-          </p>
-        )}
-
-        <div className="space-y-2 text-sm">
-          {primarySchedule && (
-            <div className="flex items-center text-gray-700">
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-              <span>
-                {format(new Date(primarySchedule.start_date), 'dd/MM/yyyy', { locale: es })}
-                {primarySchedule.start_time && (
-                  <span className="ml-1">
-                    - {primarySchedule.start_time.slice(0, 5)}
-                    {primarySchedule.end_time && ` a ${primarySchedule.end_time.slice(0, 5)}`}
+          {/* Contenido del evento */}
+          <div className='flex-1 min-w-0'>
+            <div className='flex items-center justify-between mb-3'>
+              <Chip
+                size='sm'
+                variant='flat'
+                color={getEventTypeColor(event.event_type) as any}
+                startContent={
+                  <span className='text-sm'>
+                    {getEventTypeIcon(event.event_type)}
                   </span>
-                )}
-              </span>
-            </div>
-          )}
+                }
+                className='font-medium'
+              >
+                {formatEventType(event.event_type)}
+              </Chip>
 
-          {event.address && (
-            <div className="flex items-center text-gray-700">
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              <span className="truncate">{event.address}</span>
+              {primarySchedule && (
+                <div className='text-xs text-default-400 font-medium'>
+                  {format(new Date(primarySchedule.start_date), 'eee dd MMM', {
+                    locale: es
+                  })}
+                </div>
+              )}
             </div>
-          )}
 
-          {primaryTeacher && (
-            <div className="flex items-center text-gray-700">
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-              <span>{primaryTeacher.name || 'Profesor'}</span>
-            </div>
-          )}
+            <h3 className='font-bold text-lg text-foreground mb-2 line-clamp-2 leading-tight'>
+              {event.title}
+            </h3>
 
-          <div className="flex items-center justify-between pt-2">
-            {event.class_level && (
-              <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
-                {formatClassLevel(event.class_level)}
-              </span>
+            {primaryTeacher && (
+              <div className='flex items-center gap-1 mb-3'>
+                <User className='h-4 w-4 text-default-500' />
+                <p className='text-sm text-default-600 font-medium'>
+                  {primaryTeacher.name || 'Profesor'}
+                </p>
+              </div>
             )}
-            
-            {event.price && (
-              <span className="text-lg font-semibold text-gray-900">
-                ${event.price}
-              </span>
+
+            <div className='flex items-center justify-between text-sm text-default-500'>
+              {primarySchedule?.start_time && (
+                <div className='flex items-center gap-1'>
+                  <Clock className='h-4 w-4' />
+                  <span className='font-medium'>
+                    {primarySchedule.start_time.slice(0, 5)}
+                    {primarySchedule.end_time &&
+                      ` - ${primarySchedule.end_time.slice(0, 5)}`}
+                  </span>
+                </div>
+              )}
+
+              {event.address && (
+                <div className='flex items-center gap-1 max-w-[150px]'>
+                  <MapPin className='h-4 w-4 flex-shrink-0' />
+                  <span className='truncate text-xs'>
+                    {event.address.split(',')[0]}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Nivel de clase y precio */}
+            <div className='flex items-center justify-between mt-3'>
+              {event.class_level && (
+                <Chip
+                  size='sm'
+                  color='success'
+                  variant='flat'
+                  className='text-xs'
+                >
+                  {formatClassLevel(event.class_level)}
+                </Chip>
+              )}
+
+              {event.price && (
+                <span className='text-lg font-semibold text-foreground'>
+                  ${event.price}
+                </span>
+              )}
+            </div>
+
+            {/* Descripción si existe */}
+            {event.description && (
+              <div className='mt-2 text-xs text-default-400 line-clamp-2'>
+                {event.description}
+              </div>
             )}
           </div>
         </div>
-      </div>
-    </div>
-  );
+      </CardBody>
+    </Card>
+  )
 }
