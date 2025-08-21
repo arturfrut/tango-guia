@@ -1,9 +1,8 @@
 import { Suspense } from 'react';
 import { EventsClient } from './EventsClient';
 import { createClient } from '@supabase/supabase-js';
-import { format } from 'date-fns';
-import { EventsResponse } from '../types';
 import { filterEventsByDateRange } from '../utils/eventFiltering';
+import { PageProps } from '@/.next/types/app/page';
 
 // Server-side function to fetch initial events
 export async function getInitialEvents(date: Date) {
@@ -105,7 +104,7 @@ function EventsLoading() {
   );
 }
 
-export default async function EventsPage() {
+export default async function EventsPage(props: PageProps) {
   const today = new Date();
   const initialEvents = await getInitialEvents(today);
 

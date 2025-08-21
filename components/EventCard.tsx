@@ -1,10 +1,10 @@
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { EventWithDetails } from '@/app/types';
+import { Avatar } from '@heroui/avatar';
 import { Card, CardBody } from '@heroui/card';
 import { Chip } from '@heroui/chip';
-import { Avatar } from '@heroui/avatar';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 import { Clock, MapPin, User } from 'lucide-react';
-import { EventWithDetails } from '@/app/types';
 import { useRouter } from 'next/navigation';
 
 interface EventCardProps {
