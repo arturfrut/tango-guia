@@ -1,4 +1,3 @@
-// app/eventos/EventsClient.tsx
 'use client';
 
 import { EventCard } from '@/components/EventCard';

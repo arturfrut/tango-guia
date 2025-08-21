@@ -3,17 +3,16 @@ import { EventsClient } from './EventsClient';
 import { createClient } from '@supabase/supabase-js';
 import { format } from 'date-fns';
 import { EventsResponse } from '../types';
+import { filterEventsByDateRange } from '../utils/eventFiltering';
 
 // Server-side function to fetch initial events
-async function getInitialEvents(date: Date): Promise<EventsResponse> {
+export async function getInitialEvents(date: Date) {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
   try {
-    const formattedDate = format(date, 'yyyy-MM-dd');
-
     const { data: events, error } = await supabase
       .from('events')
       .select(
@@ -57,14 +56,8 @@ async function getInitialEvents(date: Date): Promise<EventsResponse> {
       return { events: [], total: 0, has_more: false };
     }
 
-    // Filter events for today
-    const filteredEvents =
-      events?.filter((event) => {
-        return event.event_schedules?.some((schedule: { start_date: string | number | Date }) => {
-          const scheduleDate = new Date(schedule.start_date);
-          return format(scheduleDate, 'yyyy-MM-dd') === formattedDate;
-        });
-      }) || [];
+    // Usar la nueva lógica unificada
+    const filteredEvents = events ? filterEventsByDateRange(events, date) : [];
 
     return {
       events: filteredEvents,
