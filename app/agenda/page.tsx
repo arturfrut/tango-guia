@@ -4,8 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 import { filterEventsByDateRange } from '../utils/eventFiltering';
 import { PageProps } from '@/.next/types/app/page';
 
-// Server-side function to fetch initial events
-export async function getInitialEvents(date: Date) {
+async function getInitialEvents(date: Date) {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -69,7 +68,6 @@ export async function getInitialEvents(date: Date) {
   }
 }
 
-// Loading component for Suspense
 function EventsLoading() {
   return (
     <div className="min-h-screen bg-background">
