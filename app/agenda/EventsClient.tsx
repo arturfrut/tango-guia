@@ -91,21 +91,11 @@ export function EventsClient({ initialEvents, initialDate }: EventsClientProps) 
       {!isLoading && !error && (
         <>
           {events.length > 0 ? (
-            <>
               <div className="flex flex-col gap-6">
                 {events.map((event) => (
                   <EventCard key={event.id} event={event} />
                 ))}
               </div>
-
-              <div className="text-center">
-                <span className="inline-block px-3 py-1 bg-primary-100 text-primary-700 rounded-full text-sm font-medium">
-                  {events.length === 1
-                    ? '1 evento encontrado'
-                    : `${events.length} eventos encontrados`}
-                </span>
-              </div>
-            </>
           ) : (
             <div className="text-center py-12">
               <svg
