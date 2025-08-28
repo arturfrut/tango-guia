@@ -1,12 +1,12 @@
 'use client';
 
 import { EventCard } from '@/components/EventCard';
-import { Button } from '@heroui/button';
-import { addDays, format, startOfDay } from 'date-fns';
+import { format, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useEvents } from '../hooks/useEvents';
 import { EventsResponse } from '../types';
+import { DateSelector } from '@/components/DateSelectors';
 
 interface EventsClientProps {
   initialEvents: EventsResponse;
@@ -15,10 +15,6 @@ interface EventsClientProps {
 
 export function EventsClient({ initialEvents, initialDate }: EventsClientProps) {
   const [selectedDate, setSelectedDate] = useState(startOfDay(initialDate));
-
-  const days = useMemo(() => {
-    return Array.from({ length: 7 }, (_, i) => addDays(initialDate, i - 1));
-  }, [initialDate]);
 
   const {
     data: eventsData,
@@ -34,57 +30,17 @@ export function EventsClient({ initialEvents, initialDate }: EventsClientProps) 
       ? initialEvents.events
       : eventsData?.events || [];
 
-  const formatDayButton = (date: Date) => {
-    const dayName = format(date, 'EEE', { locale: es }).toUpperCase();
-    const dayNumber = format(date, 'd/M');
-    return { dayName, dayNumber };
-  };
-
   const isToday = (date: Date) => {
     return format(date, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
   };
 
-  const isSelected = (date: Date) => {
-    return format(date, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd');
-  };
-
-  const getButtonVariant = (date: Date) => {
-    if (isSelected(date)) return 'solid';
-    if (isToday(date)) return 'bordered';
-    return 'light';
-  };
-
-  const getButtonColor = (date: Date) => {
-    if (isSelected(date)) return 'primary';
-    if (isToday(date)) return 'success';
-    return 'default';
-  };
-
   return (
     <div className="space-y-8">
-      <div className="border-y-stone-500 border-1 rounded-large shadow-medium p-6">
-        <div className="flex flex-wrap gap-3 justify-center">
-          {days.map((day) => {
-            const { dayName, dayNumber } = formatDayButton(day);
-            return (
-              <Button
-                key={day.toISOString()}
-                onClick={() => setSelectedDate(startOfDay(day))}
-                variant={getButtonVariant(day)}
-                color={getButtonColor(day)}
-                className="flex-col h-16 min-w-20 relative"
-                size="sm"
-              >
-                <span className="text-xs font-medium">{dayName}</span>
-                <span className="text-sm font-bold">{dayNumber}</span>
-                {isToday(day) && !isSelected(day) && (
-                  <div className="absolute -top-1 -right-1 w-2 h-2 bg-success rounded-full" />
-                )}
-              </Button>
-            );
-          })}
-        </div>
-      </div>
+      <DateSelector
+        selectedDate={selectedDate}
+        onDateSelect={setSelectedDate}
+        initialDate={initialDate}
+      />
 
       <div className="text-center space-y-2">
         <h2 className="text-2xl font-bold text-foreground">

@@ -108,7 +108,7 @@ export interface TangoEvent {
 // Complete event with all relations - this replaces EventWithDetails
 export interface CompleteEventData extends TangoEvent {
   classes?: EventClass[];
-  practice?: EventPractice;
+  practice?: EventPractice[];
   organizers?: EventOrganizer[];
   pricing?: EventPricing[];
   seminar_days?: (SeminarDay & {

@@ -1,8 +1,8 @@
 import { CompleteEventData, EventType, ClassLevel } from '@/app/types';
 import { Avatar } from '@heroui/avatar';
-import { Button } from '@heroui/button';
 import { Card, CardBody, CardHeader } from '@heroui/card';
 import { Chip } from '@heroui/chip';
+import { Divider } from '@heroui/divider';
 import { createClient } from '@supabase/supabase-js';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -15,7 +15,6 @@ interface EventPageProps {
   params: Promise<{ id: string }>;
 }
 
-// Server-side function to fetch event by ID
 async function getEventById(id: string): Promise<CompleteEventData | null> {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -95,7 +94,7 @@ async function getEventById(id: string): Promise<CompleteEventData | null> {
     if (event?.seminar_days) {
       event.seminar_days = event.seminar_days.map((day: any) => ({
         ...day,
-        classes: day.seminar_day_classes || []
+        classes: day.seminar_day_classes || [],
       }));
     }
 
@@ -149,7 +148,6 @@ function EventLoading() {
 export default async function EventPage({ params }: EventPageProps) {
   const { id } = await params;
   const event = await getEventById(id);
-  
   if (!event) {
     notFound();
   }
@@ -162,9 +160,8 @@ export default async function EventPage({ params }: EventPageProps) {
 }
 
 function EventDetail({ event }: { event: CompleteEventData }) {
-  const primaryOrganizer = event.organizers?.find(org => org.is_primary);
   const allOrganizers = event.organizers || [];
-  
+
   const formatEventType = (type: EventType) => {
     const types = {
       special_event: 'Evento Especial',
@@ -196,82 +193,150 @@ function EventDetail({ event }: { event: CompleteEventData }) {
     return colorMap[type] || 'default';
   };
 
-  const getEventTypeIcon = (type: EventType) => {
+  const getEventTypeIcon = (type: EventType | 'practice') => {
     const iconMap = {
       special_event: '🎉',
       class: '📚',
       seminar: '🎓',
       milonga: '💃',
+      practice: '🕺',
     };
     return iconMap[type] || '📅';
   };
 
+  const getEventChips = () => {
+    const chips = [];
+
+    chips.push({
+      type: event.event_type,
+      label: formatEventType(event.event_type),
+      icon: getEventTypeIcon(event.event_type),
+    });
+
+    if (event.classes && event.classes.length > 0 && event.event_type !== 'class') {
+      chips.push({
+        type: 'class' as EventType,
+        label: 'Clase',
+        icon: getEventTypeIcon('class'),
+      });
+    }
+
+    if (event.practice && event.practice.length > 0) {
+      chips.push({
+        type: 'practice',
+        label: 'Práctica',
+        icon: getEventTypeIcon('practice'),
+      });
+    }
+
+    if (event.milonga_pre_class && event.event_type !== 'milonga' && event.event_type !== 'class') {
+      chips.push({
+        type: 'class' as EventType,
+        label: 'Clase',
+        icon: getEventTypeIcon('class'),
+      });
+    }
+
+    return chips;
+  };
+
+  const getSchedule = () => {
+    const schedule = [];
+
+    if (event.classes && event.classes.length > 0) {
+      event.classes.forEach((cls) => {
+        if (cls.start_time) {
+          schedule.push({
+            name: cls.class_name || 'Clase',
+            time: `${cls.start_time.slice(0, 5)}${cls.end_time ? ` - ${cls.end_time.slice(0, 5)}` : ''}`,
+            level: cls.class_level,
+            type: 'class',
+          });
+        }
+      });
+    }
+
+    if (event.practice && event.practice.length > 0 && event.practice[0].practice_time) {
+      schedule.push({
+        name: 'Práctica',
+        time: `${event.practice[0].practice_time.slice(0, 5)}${event.practice[0].practice_end_time ? ` - ${event.practice[0].practice_end_time.slice(0, 5)}` : ''}`,
+        level: null,
+        type: 'practice',
+      });
+    }
+
+    if (event.milonga_pre_class && event.milonga_pre_class.class_time) {
+      schedule.push({
+        name: 'Clase',
+        time: `${event.milonga_pre_class.class_time.slice(0, 5)}${event.milonga_pre_class.class_end_time ? ` - ${event.milonga_pre_class.class_end_time.slice(0, 5)}` : ''}`,
+        level: event.milonga_pre_class.class_level,
+        type: 'class',
+      });
+    }
+
+    return schedule.sort((a, b) => a.time.localeCompare(b.time));
+  };
+
+  const eventChips = getEventChips();
+  const schedule = getSchedule();
+
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto px-4 py-8">
-        {/* Main Event Card */}
         <Card className="mb-6">
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between mb-4">
-              <Link href="/agenda">
-                <Button
-                  variant="light"
-                  startContent={<ArrowLeft className="w-4 h-4" />}
-                  className="text-default-600 hover:text-default-900"
-                >
-                  Volver
-                </Button>
-              </Link>
-            </div>
+          <Link
+            href="/agenda"
+            className="pt-6 px-6 flex gap-3 items-center text-default-900 font-medium"
+          >
+            <ArrowLeft className="text-default-900" />
+            Volver
+          </Link>
 
-            <div className="flex items-start justify-between gap-4">
+          <Divider className="m-4" />
+          <CardHeader className="pb-4">
+            <div className="flex items-start gap-4 mb-4">
+              <Avatar
+                src={event.avatar_image_url}
+                name={event.title}
+                className="w-16 h-16 md:w-20 md:h-20 text-lg font-bold flex-shrink-0"
+                classNames={{
+                  base: event.avatar_image_url
+                    ? ''
+                    : 'bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500',
+                  name: 'text-white font-bold text-sm',
+                }}
+              />
               <div className="flex-1">
-                <div className="flex items-center gap-3 mb-3">
-                  <Chip
-                    size="md"
-                    variant="flat"
-                    color={getEventTypeColor(event.event_type) as any}
-                    startContent={
-                      <span className="text-lg">{getEventTypeIcon(event.event_type)}</span>
-                    }
-                    className="font-medium"
-                  >
-                    {formatEventType(event.event_type)}
-                  </Chip>
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {eventChips.map((chip, index) => (
+                    <Chip
+                      key={index}
+                      size="sm"
+                      variant="flat"
+                      color="primary"
+                      startContent={<span className="text-sm">{chip.icon}</span>}
+                      className="font-medium"
+                    >
+                      {chip.label}
+                    </Chip>
+                  ))}
                 </div>
 
-                <h1 className="text-2xl md:text-3xl font-bold text-foreground leading-tight mb-2">
+                <h1 className="text-2xl md:text-3xl font-bold text-foreground leading-tight">
                   {event.title}
                 </h1>
-                
-                {event.venue_name && (
-                  <p className="text-lg text-default-600">{event.venue_name}</p>
-                )}
               </div>
-
-              {event.pricing && event.pricing.length > 0 && (
-                <div className="text-right">
-                  <div className="flex items-center gap-1 text-2xl font-bold text-foreground">
-                    <DollarSign className="w-6 h-6" />
-                    {event.pricing[0].price}
-                  </div>
-                  {event.pricing[0].description && (
-                    <p className="text-sm text-default-500">{event.pricing[0].description}</p>
-                  )}
-                </div>
-              )}
             </div>
           </CardHeader>
 
           <CardBody className="pt-0">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-              <div className="space-y-3">
+              <div className="space-y-2">
                 <h3 className="font-semibold text-lg flex items-center gap-2">
                   <Calendar className="w-5 h-5 text-primary" />
                   Fecha
                 </h3>
                 <div className="flex items-center gap-2 text-default-700">
-                  <Calendar className="w-4 h-4 text-default-500" />
                   <span className="font-medium">
                     {format(new Date(event.date), 'EEEE, dd MMMM yyyy', {
                       locale: es,
@@ -279,28 +344,27 @@ function EventDetail({ event }: { event: CompleteEventData }) {
                   </span>
                 </div>
                 {event.has_weekly_recurrence && (
-                  <div className="text-sm text-default-600">
-                    Se repite semanalmente
-                  </div>
+                  <div className="text-sm text-default-600">Se repite semanalmente</div>
                 )}
               </div>
 
-              {/* Location */}
               {event.address && (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   <h3 className="font-semibold text-lg flex items-center gap-2">
                     <MapPin className="w-5 h-5 text-primary" />
                     Ubicación
                   </h3>
-                  <div className="flex items-start gap-2 text-default-700">
-                    <MapPin className="w-4 h-4 text-default-500 mt-1 flex-shrink-0" />
-                    <span>{event.address}</span>
+                  <div className="flex items-center gap-2 text-default-700">
+                    <div>
+                      <p className="font-medium">{event.venue_name}</p>
+                      <p className="text-sm text-default-600">{event.address}</p>
+                    </div>
                   </div>
                 </div>
               )}
 
               {allOrganizers.length > 0 && (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   <h3 className="font-semibold text-lg flex items-center gap-2">
                     <User className="w-5 h-5 text-primary" />
                     {allOrganizers.length > 1 ? 'Organizadores' : 'Organizador'}
@@ -310,7 +374,7 @@ function EventDetail({ event }: { event: CompleteEventData }) {
                       const organizerName = organizer.is_one_time_teacher
                         ? organizer.one_time_teacher_name
                         : organizer.users?.name;
-                      
+
                       return (
                         <div key={index} className="flex items-center gap-3">
                           <Avatar
@@ -321,11 +385,6 @@ function EventDetail({ event }: { event: CompleteEventData }) {
                           <div>
                             <div className="font-medium text-default-700 flex items-center gap-2">
                               {organizerName || 'Organizador'}
-                              {organizer.is_primary && (
-                                <Chip size="sm" color="primary" variant="flat">
-                                  Principal
-                                </Chip>
-                              )}
                             </div>
                             {!organizer.is_one_time_teacher && organizer.users?.phone_number && (
                               <div className="text-xs text-default-500">
@@ -340,197 +399,85 @@ function EventDetail({ event }: { event: CompleteEventData }) {
                 </div>
               )}
 
-              {(event.contact_phone || event.reminder_phone) && (
-                <div className="space-y-3">
+              {event.contact_phone && (
+                <div className="space-y-2">
                   <h3 className="font-semibold text-lg">Contacto</h3>
-                  {event.contact_phone && (
-                    <div className="text-default-700">
-                      <span className="text-sm text-default-500">Información: </span>
-                      <span className="font-medium">{event.contact_phone}</span>
-                    </div>
-                  )}
-                  {event.reminder_phone && (
-                    <div className="text-default-700">
-                      <span className="text-sm text-default-500">Recordatorios: </span>
-                      <span className="font-medium">{event.reminder_phone}</span>
-                    </div>
-                  )}
+                  <a
+                    href={`https://wa.me/${event.contact_phone.replace(/\D/g, '')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-green-600 hover:text-green-700 font-medium"
+                  >
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.890-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488" />
+                    </svg>
+                    {event.contact_phone}
+                  </a>
+                </div>
+              )}
+
+              {schedule.length > 0 && (
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-lg flex items-center gap-2">
+                    <Clock className="w-5 h-5 text-primary" />
+                    Cronograma
+                  </h3>
+                  <div className="space-y-2">
+                    {schedule.map((item, index) => (
+                      <div
+                        key={index}
+                        className="p-3 bg-default-50 rounded-lg"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2 flex-1">
+                            <span className="text-sm">
+                              {getEventTypeIcon(item.type as EventType)}
+                            </span>
+                            <span className="font-medium text-default-700">{item.name}</span>
+                          </div>
+                          <div className="flex items-center gap-1 text-sm font-medium text-default-600">
+                            <Clock className="w-3 h-3" />
+                            {item.time}
+                          </div>
+                        </div>
+                        {item.level && (
+                          <div className="text-sm text-default-600 mt-1 ml-6">
+                            {formatClassLevel(item.level)}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {event.pricing && event.pricing.length > 0 && (
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-lg flex items-center gap-2">
+                    <DollarSign className="w-5 h-5 text-primary" />
+                    Precios
+                  </h3>
+                  <div className="space-y-2">
+                    {event.pricing.map((price) => (
+                      <div
+                        key={price.id}
+                        className="flex items-center justify-between p-3 bg-default-50 rounded-lg"
+                      >
+                        <div className="flex-1">
+                          {price.description && (
+                            <div className="text-sm text-default-600">{price.description}</div>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1 font-semibold text-foreground">
+                          <DollarSign className="w-4 h-4" />
+                          {price.price}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
-
-            {event.classes && event.classes.length > 0 && (
-              <div className="mb-6">
-                <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
-                  <GraduationCap className="w-5 h-5 text-primary" />
-                  {event.classes.length > 1 ? 'Clases' : 'Clase'}
-                </h3>
-                <div className="space-y-3">
-                  {event.classes
-                    .sort((a, b) => a.class_order - b.class_order)
-                    .map((classItem) => (
-                      <div
-                        key={classItem.id}
-                        className="flex items-center justify-between p-4 bg-default-50 rounded-lg"
-                      >
-                        <div className="flex-1">
-                          <div className="font-medium text-default-700">
-                            {classItem.class_name || 'Clase de Tango'}
-                          </div>
-                          {classItem.class_level && (
-                            <div className="text-sm text-default-600">
-                              {formatClassLevel(classItem.class_level)}
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2 text-default-600">
-                          <Clock className="w-4 h-4" />
-                          <span className="font-medium">
-                            {classItem.start_time.slice(0, 5)}
-                            {classItem.end_time && ` - ${classItem?.end_time?.slice(0, 5)}`}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              </div>
-            )}
-
-            {event.practice && (
-              <div className="mb-6">
-                <h3 className="font-semibold text-lg mb-3">Práctica</h3>
-                <div className="flex items-center justify-between p-4 bg-default-50 rounded-lg">
-                  <span className="font-medium text-default-700">Práctica libre</span>
-                  <div className="flex items-center gap-2 text-default-600">
-                    <Clock className="w-4 h-4" />
-                    <span className="font-medium">
-                      {event.practice?.practice_time?.slice(0, 5)}
-                      {event.practice.practice_end_time &&
-                        ` - ${event.practice.practice_end_time.slice(0, 5)}`}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {event.milonga_pre_class && (
-              <div className="mb-6">
-                <h3 className="font-semibold text-lg mb-3">Pre-clase de Milonga</h3>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between p-4 bg-default-50 rounded-lg">
-                    <div className="flex-1">
-                      <div className="font-medium text-default-700">Clase previa</div>
-                      {event.milonga_pre_class.class_level && (
-                        <div className="text-sm text-default-600">
-                          {formatClassLevel(event.milonga_pre_class.class_level)}
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2 text-default-600">
-                      <Clock className="w-4 h-4" />
-                      <span className="font-medium">
-                        {event.milonga_pre_class?.class_time?.slice(0, 5)}
-                        {event.milonga_pre_class.class_end_time &&
-                          ` - ${event.milonga_pre_class.class_end_time.slice(0, 5)}`}
-                      </span>
-                    </div>
-                  </div>
-                  {event.milonga_pre_class.milonga_start_time && (
-                    <div className="text-sm text-default-600">
-                      <strong>Milonga comienza:</strong>{' '}
-                      {event.milonga_pre_class.milonga_start_time.slice(0, 5)}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {event.seminar_days && event.seminar_days.length > 0 && (
-              <div className="mb-6">
-                <h3 className="font-semibold text-lg mb-4">Días del Seminario</h3>
-                <div className="space-y-4">
-                  {event.seminar_days
-                    .sort((a, b) => a.day_number - b.day_number)
-                    .map((seminarDay) => (
-                      <div key={seminarDay.id} className="border border-default-200 rounded-lg p-4">
-                        <div className="flex items-center justify-between mb-3">
-                          <div>
-                            <h4 className="font-medium text-default-700">
-                              Día {seminarDay.day_number}
-                            </h4>
-                            <div className="text-sm text-default-600">
-                              {format(new Date(seminarDay.date), 'EEEE, dd MMMM yyyy', {
-                                locale: es,
-                              })}
-                            </div>
-                          </div>
-                          {seminarDay.theme && (
-                            <Chip size="sm" variant="flat" color="success">
-                              {seminarDay.theme}
-                            </Chip>
-                          )}
-                        </div>
-                        
-                        {seminarDay.classes && seminarDay.classes.length > 0 && (
-                          <div className="space-y-2">
-                            {seminarDay.classes
-                              .sort((a, b) => a.class_order - b.class_order)
-                              .map((classItem) => (
-                                <div
-                                  key={classItem.id}
-                                  className="flex items-center justify-between p-3 bg-default-50 rounded"
-                                >
-                                  <div className="flex-1">
-                                    <div className="font-medium text-default-700">
-                                      {classItem.class_name}
-                                    </div>
-                                    {classItem.class_level && (
-                                      <div className="text-sm text-default-600">
-                                        {formatClassLevel(classItem.class_level)}
-                                      </div>
-                                    )}
-                                  </div>
-                                  <div className="flex items-center gap-2 text-default-600">
-                                    <Clock className="w-4 h-4" />
-                                    <span className="font-medium">
-                                      {classItem.start_time.slice(0, 5)}
-                                      {classItem.end_time && ` - ${classItem.end_time.slice(0, 5)}`}
-                                    </span>
-                                  </div>
-                                </div>
-                              ))}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                </div>
-              </div>
-            )}
-
-            {event.pricing && event.pricing.length > 1 && (
-              <div className="mb-6">
-                <h3 className="font-semibold text-lg mb-4">Opciones de Precio</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {event.pricing.map((price) => (
-                    <div
-                      key={price.id}
-                      className="flex items-center justify-between p-4 bg-default-50 rounded-lg"
-                    >
-                      <div className="flex-1">
-                        <div className="font-medium text-default-700">{price.price_type}</div>
-                        {price.description && (
-                          <div className="text-sm text-default-600">{price.description}</div>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-1 text-lg font-semibold text-foreground">
-                        <DollarSign className="w-5 h-5" />
-                        {price.price}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
 
             {event.description && (
               <div className="mb-6">

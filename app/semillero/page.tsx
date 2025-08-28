@@ -2,7 +2,6 @@ import Image from 'next/image'
 import Link from 'next/link'
 
 export default function SemilleroPage() {
-  const moreInfo = () => console.log('Más info clicked')
   return (
     <section className='min-h-screen flex flex-col items-center justify-start'>
       <div className='relative w-20 h-20 mb-6'>

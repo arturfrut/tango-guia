@@ -186,40 +186,6 @@ export function getPrimaryOrganizer(event: CompleteEventData) {
 }
 
 /**
- * Get display time for an event (first class, practice, or pre-class)
- */
-export function getEventDisplayTime(
-  event: CompleteEventData
-): { start: string; end?: string } | null {
-  // Check first class
-  const firstClass = event.classes?.[0];
-  if (firstClass?.start_time) {
-    return {
-      start: firstClass?.start_time?.slice(0, 5),
-      end: firstClass?.end_time?.slice(0, 5),
-    };
-  }
-
-  // Check practice
-  if (event.practice?.practice_time) {
-    return {
-      start: event.practice?.practice_time?.slice(0, 5),
-      end: event.practice?.practice_end_time?.slice(0, 5),
-    };
-  }
-
-  // Check milonga pre-class
-  if (event.milonga_pre_class?.class_time) {
-    return {
-      start: event.milonga_pre_class?.class_time?.slice(0, 5),
-      end: event.milonga_pre_class?.class_end_time?.slice(0, 5),
-    };
-  }
-
-  return null;
-}
-
-/**
  * Get main price from event pricing
  */
 export function getMainPrice(
@@ -245,28 +211,7 @@ export function getEventDisplayLevel(event: CompleteEventData): ClassLevel | nul
 /**
  * Sort events by date and time
  */
-export function sortEventsByDateTime(events: CompleteEventData[]): CompleteEventData[] {
-  return [...events].sort((a, b) => {
-    // First sort by date
-    const dateComparison = new Date(a.date).getTime() - new Date(b.date).getTime();
-    if (dateComparison !== 0) return dateComparison;
 
-    // Then sort by time if same date
-    const aTime = getEventDisplayTime(a);
-    const bTime = getEventDisplayTime(b);
-
-    if (aTime && bTime) {
-      return aTime.start.localeCompare(bTime.start);
-    }
-
-    // If one has time and other doesn't, prioritize the one with time
-    if (aTime && !bTime) return -1;
-    if (!aTime && bTime) return 1;
-
-    // Finally sort by creation time
-    return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-  });
-}
 
 /**
  * Generate recurring event instances for a date range

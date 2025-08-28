@@ -153,7 +153,7 @@ export async function GET(request: NextRequest) {
       .is('deleted_at', null);
 
     const { data: events, error } = await query.order('date', { ascending: true });
-
+      
     if (error) {
       console.error('Supabase error:', error);
       return NextResponse.json({ error: 'Failed to fetch events' }, { status: 500 });
