@@ -11,7 +11,7 @@ interface UseEventsOptions {
 export function useEvents({ startDate, endDate, enabled = true }: UseEventsOptions) {
   return useQuery({
     queryKey: [
-      'events',
+      'tango-events',
       format(startDate, 'yyyy-MM-dd'),
       endDate ? format(endDate, 'yyyy-MM-dd') : null,
     ],

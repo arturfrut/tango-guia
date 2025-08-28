@@ -1,26 +1,54 @@
-import { EventWithDetails } from '@/app/types';
+import { CompleteEventData, ClassLevel, EventType } from '@/app/types';
 import { Avatar } from '@heroui/avatar';
 import { Card, CardBody } from '@heroui/card';
 import { Chip } from '@heroui/chip';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Clock, MapPin, User } from 'lucide-react';
+import { Clock, MapPin, User, DollarSign } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 interface EventCardProps {
-  event: EventWithDetails;
+  event: CompleteEventData;
   onClick?: () => void;
 }
 
 export function EventCard({ event, onClick }: EventCardProps) {
   const router = useRouter();
-  const primarySchedule = event.event_schedules?.[0];
-  const primaryTeacher = event.event_teachers?.find(
-    (et: { is_primary_teacher: any }) => et.is_primary_teacher
-  )?.teacher;
-  const thumbnailImage =
-    event.event_images?.find((img: { display_order: number }) => img.display_order === 0) ||
-    event.event_images?.[0];
+  
+  const primaryOrganizer = event.organizers?.find(org => org.is_primary);
+  const organizerName = primaryOrganizer?.is_one_time_teacher 
+    ? primaryOrganizer.one_time_teacher_name 
+    : primaryOrganizer?.users?.name;
+
+  const firstClass = event.classes?.[0];
+  const practiceTime = event.practice?.practice_time;
+  const preClassTime = event.milonga_pre_class?.class_time;
+  
+  const getDisplayTime = () => {
+    if (firstClass?.start_time) {
+      return {
+        start: firstClass.start_time.slice(0, 5),
+        end: firstClass.end_time?.slice(0, 5)
+      };
+    }
+    if (practiceTime) {
+      return {
+        start: practiceTime.slice(0, 5),
+        end: event.practice?.practice_end_time?.slice(0, 5)
+      };
+    }
+    if (preClassTime) {
+      return {
+        start: preClassTime.slice(0, 5),
+        end: event.milonga_pre_class?.class_end_time?.slice(0, 5)
+      };
+    }
+    return null;
+  };
+
+  const displayTime = getDisplayTime();
+
+  const mainPrice = event.pricing?.[0];
 
   const handleCardClick = () => {
     if (onClick) {
@@ -29,48 +57,49 @@ export function EventCard({ event, onClick }: EventCardProps) {
       router.push(`/agenda/${event.id}`);
     }
   };
-  const formatEventType = (type: string) => {
+
+  const formatEventType = (type: EventType) => {
     const types = {
       special_event: 'Evento Especial',
       class: 'Clase',
       seminar: 'Seminario',
       milonga: 'Milonga',
-      practice: 'Práctica',
     };
-    return types[type as keyof typeof types] || type;
+    return types[type] || type;
   };
 
-  const formatClassLevel = (level?: string) => {
+  const formatClassLevel = (level?: ClassLevel) => {
+    if (!level) return null;
     const levels = {
       beginner: 'Principiante',
       intermediate: 'Intermedio',
       advanced: 'Avanzado',
       all_levels: 'Todos los niveles',
     };
-    return level ? levels[level as keyof typeof levels] || level : null;
+    return levels[level] || level;
   };
 
-  const getEventTypeColor = (type: string) => {
+  const getEventTypeColor = (type: EventType) => {
     const colorMap = {
       special_event: 'secondary',
       class: 'primary',
       seminar: 'success',
       milonga: 'warning',
-      practice: 'default',
     };
-    return colorMap[type as keyof typeof colorMap] || 'default';
+    return colorMap[type] || 'default';
   };
 
-  const getEventTypeIcon = (type: string) => {
+  const getEventTypeIcon = (type: EventType) => {
     const iconMap = {
       special_event: '🎉',
       class: '📚',
       seminar: '🎓',
       milonga: '💃',
-      practice: '🔄',
     };
-    return iconMap[type as keyof typeof iconMap] || '📅';
+    return iconMap[type] || '📅';
   };
+
+  const displayLevel = firstClass?.class_level || event.milonga_pre_class?.class_level;
 
   return (
     <Card
@@ -80,20 +109,18 @@ export function EventCard({ event, onClick }: EventCardProps) {
     >
       <CardBody className="p-5">
         <div className="flex items-start gap-4">
-          {/* Avatar con imagen o inicial */}
           <Avatar
-            src={thumbnailImage?.image_url}
+            src={event.avatar_image_url}
             name={event.title}
             className="w-16 h-16 text-lg font-bold flex-shrink-0"
             classNames={{
-              base: thumbnailImage
+              base: event.avatar_image_url
                 ? ''
                 : 'bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500',
               name: 'text-white font-bold text-sm',
             }}
           />
 
-          {/* Contenido del evento */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between mb-3">
               <Chip
@@ -106,35 +133,42 @@ export function EventCard({ event, onClick }: EventCardProps) {
                 {formatEventType(event.event_type)}
               </Chip>
 
-              {primarySchedule && (
-                <div className="text-xs text-default-400 font-medium">
-                  {format(new Date(primarySchedule.start_date), 'eee dd MMM', {
-                    locale: es,
-                  })}
-                </div>
-              )}
+              <div className="text-xs text-default-400 font-medium">
+                {format(new Date(event.date), 'eee dd MMM', {
+                  locale: es,
+                })}
+              </div>
             </div>
 
             <h3 className="font-bold text-lg text-foreground mb-2 line-clamp-2 leading-tight">
               {event.title}
             </h3>
 
-            {primaryTeacher && (
+            {event.venue_name && (
+              <div className="flex items-center gap-1 mb-2">
+                <MapPin className="h-4 w-4 text-default-500" />
+                <p className="text-sm text-default-600 font-medium">
+                  {event.venue_name}
+                </p>
+              </div>
+            )}
+
+            {organizerName && (
               <div className="flex items-center gap-1 mb-3">
                 <User className="h-4 w-4 text-default-500" />
                 <p className="text-sm text-default-600 font-medium">
-                  {primaryTeacher.name || 'Profesor'}
+                  {organizerName}
                 </p>
               </div>
             )}
 
             <div className="flex items-center justify-between text-sm text-default-500">
-              {primarySchedule?.start_time && (
+              {displayTime && (
                 <div className="flex items-center gap-1">
                   <Clock className="h-4 w-4" />
                   <span className="font-medium">
-                    {primarySchedule.start_time.slice(0, 5)}
-                    {primarySchedule.end_time && ` - ${primarySchedule.end_time.slice(0, 5)}`}
+                    {displayTime.start}
+                    {displayTime.end && ` - ${displayTime.end}`}
                   </span>
                 </div>
               )}
@@ -147,22 +181,33 @@ export function EventCard({ event, onClick }: EventCardProps) {
               )}
             </div>
 
-            {/* Nivel de clase y precio */}
             <div className="flex items-center justify-between mt-3">
-              {event.class_level && (
+              {displayLevel && (
                 <Chip size="sm" color="success" variant="flat" className="text-xs">
-                  {formatClassLevel(event.class_level)}
+                  {formatClassLevel(displayLevel)}
                 </Chip>
               )}
 
-              {event.price && (
-                <span className="text-lg font-semibold text-foreground">${event.price}</span>
+              {mainPrice && (
+                <div className="flex items-center gap-1 text-lg font-semibold text-foreground">
+                  <DollarSign className="w-4 h-4" />
+                  <span>${mainPrice.price}</span>
+                </div>
               )}
             </div>
 
-            {/* Descripción si existe */}
+            {event.classes && event.classes.length > 1 && (
+              <div className="mt-2">
+                <Chip size="sm" color="primary" variant="flat" className="text-xs">
+                  {event.classes.length} clases
+                </Chip>
+              </div>
+            )}
+
             {event.description && (
-              <div className="mt-2 text-xs text-default-400 line-clamp-2">{event.description}</div>
+              <div className="mt-2 text-xs text-default-400 line-clamp-2">
+                {event.description}
+              </div>
             )}
           </div>
         </div>

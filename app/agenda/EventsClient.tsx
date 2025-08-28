@@ -20,18 +20,15 @@ export function EventsClient({ initialEvents, initialDate }: EventsClientProps) 
     return Array.from({ length: 7 }, (_, i) => addDays(initialDate, i - 1));
   }, [initialDate]);
 
-  // Use React Query for client-side data fetching
   const {
     data: eventsData,
     isLoading,
     error,
   } = useEvents({
     startDate: selectedDate,
-    // Skip initial fetch if it's for today and we have initial data
     enabled: format(selectedDate, 'yyyy-MM-dd') !== format(initialDate, 'yyyy-MM-dd'),
   });
 
-  // Use initial data for today, otherwise use fetched data
   const events =
     format(selectedDate, 'yyyy-MM-dd') === format(initialDate, 'yyyy-MM-dd')
       ? initialEvents.events
@@ -65,7 +62,6 @@ export function EventsClient({ initialEvents, initialDate }: EventsClientProps) 
 
   return (
     <div className="space-y-8">
-      {/* Date Navigation */}
       <div className="border-y-stone-500 border-1 rounded-large shadow-medium p-6">
         <div className="flex flex-wrap gap-3 justify-center">
           {days.map((day) => {
@@ -90,7 +86,6 @@ export function EventsClient({ initialEvents, initialDate }: EventsClientProps) 
         </div>
       </div>
 
-      {/* Selected Date Display */}
       <div className="text-center space-y-2">
         <h2 className="text-2xl font-bold text-foreground">
           {format(selectedDate, "EEEE d 'de' MMMM", { locale: es })}
@@ -104,7 +99,6 @@ export function EventsClient({ initialEvents, initialDate }: EventsClientProps) 
 
       <div className="border-t border-divider"></div>
 
-      {/* Loading State */}
       {isLoading && (
         <div className="rounded-large shadow-medium">
           <div className="flex justify-center items-center h-32 p-6">
@@ -116,7 +110,6 @@ export function EventsClient({ initialEvents, initialDate }: EventsClientProps) 
         </div>
       )}
 
-      {/* Error State */}
       {error && (
         <div className="bg-white rounded-large shadow-medium">
           <div className="text-center py-8 p-6">
@@ -139,7 +132,6 @@ export function EventsClient({ initialEvents, initialDate }: EventsClientProps) 
         </div>
       )}
 
-      {/* Events Grid */}
       {!isLoading && !error && (
         <>
           {events.length > 0 ? (
@@ -150,7 +142,6 @@ export function EventsClient({ initialEvents, initialDate }: EventsClientProps) 
                 ))}
               </div>
 
-              {/* Events Count */}
               <div className="text-center">
                 <span className="inline-block px-3 py-1 bg-primary-100 text-primary-700 rounded-full text-sm font-medium">
                   {events.length === 1

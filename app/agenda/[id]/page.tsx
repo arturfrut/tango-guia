@@ -1,4 +1,4 @@
-import { EventWithDetails } from '@/app/types';
+import { CompleteEventData, EventType, ClassLevel } from '@/app/types';
 import { Avatar } from '@heroui/avatar';
 import { Button } from '@heroui/button';
 import { Card, CardBody, CardHeader } from '@heroui/card';
@@ -6,7 +6,7 @@ import { Chip } from '@heroui/chip';
 import { createClient } from '@supabase/supabase-js';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { ArrowLeft, Calendar, Clock, DollarSign, MapPin, User } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock, DollarSign, MapPin, User, GraduationCap } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
@@ -16,7 +16,7 @@ interface EventPageProps {
 }
 
 // Server-side function to fetch event by ID
-async function getEventById(id: string): Promise<EventWithDetails | null> {
+async function getEventById(id: string): Promise<CompleteEventData | null> {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -24,37 +24,61 @@ async function getEventById(id: string): Promise<EventWithDetails | null> {
 
   try {
     const { data: event, error } = await supabase
-      .from('events')
+      .from('tango_events')
       .select(
         `
         *,
-        event_schedules (
+        classes:event_classes (
           id,
-          start_date,
-          end_date,
+          class_name,
           start_time,
           end_time,
-          timezone,
-          recurrence_pattern,
-          recurrence_rule,
-          days_of_week,
-          ends_at
+          class_level,
+          class_order
         ),
-        event_images (
+        practice:event_practices (
           id,
-          image_url,
-          meta_media_id,
-          caption,
-          display_order
+          practice_time,
+          practice_end_time
         ),
-        event_teachers (
+        organizers:event_organizers (
           id,
-          is_primary_teacher,
-          teacher:users!event_teachers_teacher_id_fkey (
+          organizer_type,
+          is_primary,
+          is_one_time_teacher,
+          one_time_teacher_name,
+          users:user_id (
             id,
             name,
             phone_number
           )
+        ),
+        pricing:event_pricing (
+          id,
+          price_type,
+          price,
+          description
+        ),
+        seminar_days (
+          id,
+          day_number,
+          date,
+          theme,
+          seminar_day_classes (
+            id,
+            class_name,
+            start_time,
+            end_time,
+            class_level,
+            class_order
+          )
+        ),
+        milonga_pre_class:milonga_pre_classes (
+          id,
+          class_time,
+          class_end_time,
+          class_level,
+          milonga_start_time
         )
       `
       )
@@ -68,20 +92,25 @@ async function getEventById(id: string): Promise<EventWithDetails | null> {
       return null;
     }
 
-    return event as EventWithDetails;
+    if (event?.seminar_days) {
+      event.seminar_days = event.seminar_days.map((day: any) => ({
+        ...day,
+        classes: day.seminar_day_classes || []
+      }));
+    }
+
+    return event as CompleteEventData;
   } catch (error) {
     console.error('Server-side error:', error);
     return null;
   }
 }
 
-// Loading component for Suspense
 function EventLoading() {
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto px-4 py-8">
         <Card className="mb-6">
-          {/* Image skeleton */}
           <div className="w-full h-64 md:h-80 bg-default-200 animate-pulse"></div>
 
           <CardHeader className="pb-2">
@@ -110,22 +139,8 @@ function EventLoading() {
                 </div>
               ))}
             </div>
-
-            <div className="space-y-3 mb-6">
-              <div className="w-24 h-6 bg-default-200 rounded animate-pulse"></div>
-              <div className="space-y-2">
-                <div className="w-full h-4 bg-default-200 rounded animate-pulse"></div>
-                <div className="w-full h-4 bg-default-200 rounded animate-pulse"></div>
-                <div className="w-2/3 h-4 bg-default-200 rounded animate-pulse"></div>
-              </div>
-            </div>
           </CardBody>
         </Card>
-
-        <div className="flex gap-4 justify-center">
-          <div className="w-40 h-12 bg-default-200 rounded-lg animate-pulse"></div>
-          <div className="w-40 h-12 bg-default-200 rounded-lg animate-pulse"></div>
-        </div>
       </div>
     </div>
   );
@@ -134,6 +149,7 @@ function EventLoading() {
 export default async function EventPage({ params }: EventPageProps) {
   const { id } = await params;
   const event = await getEventById(id);
+  
   if (!event) {
     notFound();
   }
@@ -145,94 +161,69 @@ export default async function EventPage({ params }: EventPageProps) {
   );
 }
 
-// Event detail component
-function EventDetail({ event }: { event: EventWithDetails }) {
-  const primarySchedule = event.event_schedules?.[0];
-  const primaryTeacher = event.event_teachers?.find(
-    (et: { is_primary_teacher: any }) => et.is_primary_teacher
-  )?.teacher;
-  const allTeachers = event.event_teachers?.map((et: { teacher: any }) => et.teacher) || [];
-  const mainImage =
-    event.event_images?.find((img: { display_order: number }) => img.display_order === 0) ||
-    event.event_images?.[0];
-  const additionalImages =
-    event.event_images?.filter((img: { display_order: number }) => img.display_order > 0) || [];
-
-  const formatEventType = (type: string) => {
+function EventDetail({ event }: { event: CompleteEventData }) {
+  const primaryOrganizer = event.organizers?.find(org => org.is_primary);
+  const allOrganizers = event.organizers || [];
+  
+  const formatEventType = (type: EventType) => {
     const types = {
       special_event: 'Evento Especial',
       class: 'Clase',
       seminar: 'Seminario',
       milonga: 'Milonga',
-      practice: 'Práctica',
     };
-    return types[type as keyof typeof types] || type;
+    return types[type] || type;
   };
 
-  const formatClassLevel = (level?: string) => {
+  const formatClassLevel = (level?: ClassLevel) => {
+    if (!level) return null;
     const levels = {
       beginner: 'Principiante',
       intermediate: 'Intermedio',
       advanced: 'Avanzado',
       all_levels: 'Todos los niveles',
     };
-    return level ? levels[level as keyof typeof levels] || level : null;
+    return levels[level] || level;
   };
 
-  const getEventTypeColor = (type: string) => {
+  const getEventTypeColor = (type: EventType) => {
     const colorMap = {
       special_event: 'secondary',
       class: 'primary',
       seminar: 'success',
       milonga: 'warning',
-      practice: 'default',
     };
-    return colorMap[type as keyof typeof colorMap] || 'default';
+    return colorMap[type] || 'default';
   };
 
-  const getEventTypeIcon = (type: string) => {
+  const getEventTypeIcon = (type: EventType) => {
     const iconMap = {
       special_event: '🎉',
       class: '📚',
       seminar: '🎓',
       milonga: '💃',
-      practice: '🔄',
     };
-    return iconMap[type as keyof typeof iconMap] || '📅';
+    return iconMap[type] || '📅';
   };
 
   return (
-    <div className="">
+    <div className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Main Event Card */}
         <Card className="mb-6">
-          <Link href="/agenda">
-            <Button
-              variant="light"
-              startContent={<ArrowLeft className="w-4 h-4" />}
-              className="text-default-600 hover:text-default-900"
-            >
-              Volver
-            </Button>
-          </Link>
-          {/* {mainImage && (
-            <div className="relative w-full h-64 md:h-80 overflow-hidden">
-              <Image
-                src={mainImage.image_url}
-                alt={event.title}
-                fill
-                className="object-cover"
-                priority
-              />
-              {mainImage.caption && (
-                <div className="absolute bottom-4 left-4 bg-black/60 text-white px-3 py-1 rounded-lg text-sm">
-                  {mainImage.caption}
-                </div>
-              )}
-            </div>
-          )} */}
-
           <CardHeader className="pb-2">
+            <div className="flex items-center justify-between mb-4">
+              <Link href="/agenda">
+                <Button
+                  variant="light"
+                  startContent={<ArrowLeft className="w-4 h-4" />}
+                  className="text-default-600 hover:text-default-900"
+                >
+                  Volver
+                </Button>
+              </Link>
+            </div>
+
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-3">
@@ -247,63 +238,52 @@ function EventDetail({ event }: { event: EventWithDetails }) {
                   >
                     {formatEventType(event.event_type)}
                   </Chip>
-
-                  {event.class_level && (
-                    <Chip size="md" color="success" variant="flat">
-                      {formatClassLevel(event.class_level)}
-                    </Chip>
-                  )}
                 </div>
 
-                <h1 className="text-2xl md:text-3xl font-bold text-foreground leading-tight">
+                <h1 className="text-2xl md:text-3xl font-bold text-foreground leading-tight mb-2">
                   {event.title}
                 </h1>
+                
+                {event.venue_name && (
+                  <p className="text-lg text-default-600">{event.venue_name}</p>
+                )}
               </div>
 
-              {event.price && (
+              {event.pricing && event.pricing.length > 0 && (
                 <div className="text-right">
                   <div className="flex items-center gap-1 text-2xl font-bold text-foreground">
                     <DollarSign className="w-6 h-6" />
-                    {event.price}
+                    {event.pricing[0].price}
                   </div>
+                  {event.pricing[0].description && (
+                    <p className="text-sm text-default-500">{event.pricing[0].description}</p>
+                  )}
                 </div>
               )}
             </div>
           </CardHeader>
 
           <CardBody className="pt-0">
-            {/* Event Details Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-              {/* Date and Time */}
-              {primarySchedule && (
-                <div className="space-y-3">
-                  <h3 className="font-semibold text-lg flex items-center gap-2">
-                    <Calendar className="w-5 h-5 text-primary" />
-                    Fecha y Horario
-                  </h3>
-
-                  <div className="space-y-2 text-default-700">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-default-500" />
-                      <span className="font-medium">
-                        {format(new Date(primarySchedule.start_date), 'EEEE, dd MMMM yyyy', {
-                          locale: es,
-                        })}
-                      </span>
-                    </div>
-
-                    {primarySchedule.start_time && (
-                      <div className="flex items-center gap-2">
-                        <Clock className="w-4 h-4 text-default-500" />
-                        <span>
-                          {primarySchedule.start_time.slice(0, 5)}
-                          {primarySchedule.end_time && ` - ${primarySchedule.end_time.slice(0, 5)}`}
-                        </span>
-                      </div>
-                    )}
-                  </div>
+              <div className="space-y-3">
+                <h3 className="font-semibold text-lg flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-primary" />
+                  Fecha
+                </h3>
+                <div className="flex items-center gap-2 text-default-700">
+                  <Calendar className="w-4 h-4 text-default-500" />
+                  <span className="font-medium">
+                    {format(new Date(event.date), 'EEEE, dd MMMM yyyy', {
+                      locale: es,
+                    })}
+                  </span>
                 </div>
-              )}
+                {event.has_weekly_recurrence && (
+                  <div className="text-sm text-default-600">
+                    Se repite semanalmente
+                  </div>
+                )}
+              </div>
 
               {/* Location */}
               {event.address && (
@@ -312,7 +292,6 @@ function EventDetail({ event }: { event: EventWithDetails }) {
                     <MapPin className="w-5 h-5 text-primary" />
                     Ubicación
                   </h3>
-
                   <div className="flex items-start gap-2 text-default-700">
                     <MapPin className="w-4 h-4 text-default-500 mt-1 flex-shrink-0" />
                     <span>{event.address}</span>
@@ -320,38 +299,239 @@ function EventDetail({ event }: { event: EventWithDetails }) {
                 </div>
               )}
 
-              {/* Teachers */}
-              {allTeachers.length > 0 && (
+              {allOrganizers.length > 0 && (
                 <div className="space-y-3">
                   <h3 className="font-semibold text-lg flex items-center gap-2">
                     <User className="w-5 h-5 text-primary" />
-                    {allTeachers.length > 1 ? 'Profesores' : 'Profesor'}
+                    {allOrganizers.length > 1 ? 'Organizadores' : 'Organizador'}
                   </h3>
-
                   <div className="space-y-2">
-                    {allTeachers.map((teacher: any, index: number) => (
-                      <div key={index} className="flex items-center gap-3">
-                        <Avatar
-                          name={teacher?.name || 'Profesor'}
-                          size="sm"
-                          className="flex-shrink-0"
-                        />
-                        <div>
-                          <div className="font-medium text-default-700">
-                            {teacher?.name || 'Profesor'}
+                    {allOrganizers.map((organizer, index) => {
+                      const organizerName = organizer.is_one_time_teacher
+                        ? organizer.one_time_teacher_name
+                        : organizer.users?.name;
+                      
+                      return (
+                        <div key={index} className="flex items-center gap-3">
+                          <Avatar
+                            name={organizerName || 'Organizador'}
+                            size="sm"
+                            className="flex-shrink-0"
+                          />
+                          <div>
+                            <div className="font-medium text-default-700 flex items-center gap-2">
+                              {organizerName || 'Organizador'}
+                              {organizer.is_primary && (
+                                <Chip size="sm" color="primary" variant="flat">
+                                  Principal
+                                </Chip>
+                              )}
+                            </div>
+                            {!organizer.is_one_time_teacher && organizer.users?.phone_number && (
+                              <div className="text-xs text-default-500">
+                                {organizer.users.phone_number}
+                              </div>
+                            )}
                           </div>
-                          {teacher?.phone_number && (
-                            <div className="text-xs text-default-500">{teacher?.phone_number}</div>
-                          )}
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
+                </div>
+              )}
+
+              {(event.contact_phone || event.reminder_phone) && (
+                <div className="space-y-3">
+                  <h3 className="font-semibold text-lg">Contacto</h3>
+                  {event.contact_phone && (
+                    <div className="text-default-700">
+                      <span className="text-sm text-default-500">Información: </span>
+                      <span className="font-medium">{event.contact_phone}</span>
+                    </div>
+                  )}
+                  {event.reminder_phone && (
+                    <div className="text-default-700">
+                      <span className="text-sm text-default-500">Recordatorios: </span>
+                      <span className="font-medium">{event.reminder_phone}</span>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
 
-            {/* Description */}
+            {event.classes && event.classes.length > 0 && (
+              <div className="mb-6">
+                <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                  <GraduationCap className="w-5 h-5 text-primary" />
+                  {event.classes.length > 1 ? 'Clases' : 'Clase'}
+                </h3>
+                <div className="space-y-3">
+                  {event.classes
+                    .sort((a, b) => a.class_order - b.class_order)
+                    .map((classItem) => (
+                      <div
+                        key={classItem.id}
+                        className="flex items-center justify-between p-4 bg-default-50 rounded-lg"
+                      >
+                        <div className="flex-1">
+                          <div className="font-medium text-default-700">
+                            {classItem.class_name || 'Clase de Tango'}
+                          </div>
+                          {classItem.class_level && (
+                            <div className="text-sm text-default-600">
+                              {formatClassLevel(classItem.class_level)}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 text-default-600">
+                          <Clock className="w-4 h-4" />
+                          <span className="font-medium">
+                            {classItem.start_time.slice(0, 5)}
+                            {classItem.end_time && ` - ${classItem?.end_time?.slice(0, 5)}`}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
+
+            {event.practice && (
+              <div className="mb-6">
+                <h3 className="font-semibold text-lg mb-3">Práctica</h3>
+                <div className="flex items-center justify-between p-4 bg-default-50 rounded-lg">
+                  <span className="font-medium text-default-700">Práctica libre</span>
+                  <div className="flex items-center gap-2 text-default-600">
+                    <Clock className="w-4 h-4" />
+                    <span className="font-medium">
+                      {event.practice?.practice_time?.slice(0, 5)}
+                      {event.practice.practice_end_time &&
+                        ` - ${event.practice.practice_end_time.slice(0, 5)}`}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {event.milonga_pre_class && (
+              <div className="mb-6">
+                <h3 className="font-semibold text-lg mb-3">Pre-clase de Milonga</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-4 bg-default-50 rounded-lg">
+                    <div className="flex-1">
+                      <div className="font-medium text-default-700">Clase previa</div>
+                      {event.milonga_pre_class.class_level && (
+                        <div className="text-sm text-default-600">
+                          {formatClassLevel(event.milonga_pre_class.class_level)}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 text-default-600">
+                      <Clock className="w-4 h-4" />
+                      <span className="font-medium">
+                        {event.milonga_pre_class?.class_time?.slice(0, 5)}
+                        {event.milonga_pre_class.class_end_time &&
+                          ` - ${event.milonga_pre_class.class_end_time.slice(0, 5)}`}
+                      </span>
+                    </div>
+                  </div>
+                  {event.milonga_pre_class.milonga_start_time && (
+                    <div className="text-sm text-default-600">
+                      <strong>Milonga comienza:</strong>{' '}
+                      {event.milonga_pre_class.milonga_start_time.slice(0, 5)}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {event.seminar_days && event.seminar_days.length > 0 && (
+              <div className="mb-6">
+                <h3 className="font-semibold text-lg mb-4">Días del Seminario</h3>
+                <div className="space-y-4">
+                  {event.seminar_days
+                    .sort((a, b) => a.day_number - b.day_number)
+                    .map((seminarDay) => (
+                      <div key={seminarDay.id} className="border border-default-200 rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <div>
+                            <h4 className="font-medium text-default-700">
+                              Día {seminarDay.day_number}
+                            </h4>
+                            <div className="text-sm text-default-600">
+                              {format(new Date(seminarDay.date), 'EEEE, dd MMMM yyyy', {
+                                locale: es,
+                              })}
+                            </div>
+                          </div>
+                          {seminarDay.theme && (
+                            <Chip size="sm" variant="flat" color="success">
+                              {seminarDay.theme}
+                            </Chip>
+                          )}
+                        </div>
+                        
+                        {seminarDay.classes && seminarDay.classes.length > 0 && (
+                          <div className="space-y-2">
+                            {seminarDay.classes
+                              .sort((a, b) => a.class_order - b.class_order)
+                              .map((classItem) => (
+                                <div
+                                  key={classItem.id}
+                                  className="flex items-center justify-between p-3 bg-default-50 rounded"
+                                >
+                                  <div className="flex-1">
+                                    <div className="font-medium text-default-700">
+                                      {classItem.class_name}
+                                    </div>
+                                    {classItem.class_level && (
+                                      <div className="text-sm text-default-600">
+                                        {formatClassLevel(classItem.class_level)}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-2 text-default-600">
+                                    <Clock className="w-4 h-4" />
+                                    <span className="font-medium">
+                                      {classItem.start_time.slice(0, 5)}
+                                      {classItem.end_time && ` - ${classItem.end_time.slice(0, 5)}`}
+                                    </span>
+                                  </div>
+                                </div>
+                              ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
+
+            {event.pricing && event.pricing.length > 1 && (
+              <div className="mb-6">
+                <h3 className="font-semibold text-lg mb-4">Opciones de Precio</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {event.pricing.map((price) => (
+                    <div
+                      key={price.id}
+                      className="flex items-center justify-between p-4 bg-default-50 rounded-lg"
+                    >
+                      <div className="flex-1">
+                        <div className="font-medium text-default-700">{price.price_type}</div>
+                        {price.description && (
+                          <div className="text-sm text-default-600">{price.description}</div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1 text-lg font-semibold text-foreground">
+                        <DollarSign className="w-5 h-5" />
+                        {price.price}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {event.description && (
               <div className="mb-6">
                 <h3 className="font-semibold text-lg mb-3">Descripción</h3>
@@ -361,29 +541,14 @@ function EventDetail({ event }: { event: EventWithDetails }) {
               </div>
             )}
 
-            {/* Additional Images */}
-            {/* {additionalImages.length > 0 && (
-              <div>
-                <h3 className="font-semibold text-lg mb-4">Más imágenes</h3>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {additionalImages.map((image: any) => (
-                    <div key={image?.id} className="relative aspect-square overflow-hidden rounded-lg">
-                      <Image
-                        src={image?.image_url}
-                        alt={image?.caption || event.title}
-                        fill
-                        className="object-cover hover:scale-105 transition-transform duration-300"
-                      />
-                      {image?.caption && (
-                        <div className="absolute bottom-2 left-2 right-2 bg-black/60 text-white px-2 py-1 rounded text-xs">
-                          {image?.caption}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
+            {event.show_description && (
+              <div className="mb-6">
+                <h3 className="font-semibold text-lg mb-3">Información del Show</h3>
+                <p className="text-default-700 leading-relaxed whitespace-pre-wrap">
+                  {event.show_description}
+                </p>
               </div>
-            )} */}
+            )}
           </CardBody>
         </Card>
       </div>
