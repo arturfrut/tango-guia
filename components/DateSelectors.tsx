@@ -14,8 +14,10 @@ interface DateSelectorProps {
 
 export function DateSelector({ selectedDate, onDateSelect, initialDate }: DateSelectorProps) {
   const days = useMemo(() => {
-    return Array.from({ length: 7 }, (_, i) => addDays(initialDate, i - 1));
-  }, [initialDate]);
+    const today = startOfDay(new Date());
+    const yesterday = addDays(today, -1);
+    return Array.from({ length: 7 }, (_, i) => addDays(yesterday, i));
+  }, []);
 
   const formatDayButton = (date: Date) => {
     const dayName = format(date, 'EEE', { locale: es }).toUpperCase();

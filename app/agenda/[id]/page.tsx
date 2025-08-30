@@ -22,71 +22,95 @@ async function getEventById(id: string): Promise<CompleteEventData | null> {
   );
 
   try {
-    const { data: event, error } = await supabase
-      .from('tango_events')
-      .select(
-        `
-        *,
-        classes:event_classes (
+    const eventId = id.includes('_') ? id.split('_')[0] : id;
+    const eventDate = id.includes('_') ? id.split('_')[1] : null;
+
+    const selectQuery = `
+      *,
+      classes:event_classes (
+        id,
+        class_name,
+        start_time,
+        end_time,
+        class_level,
+        class_order
+      ),
+      practice:event_practices (
+        id,
+        practice_time,
+        practice_end_time
+      ),
+      organizers:event_organizers (
+        id,
+        organizer_type,
+        is_primary,
+        is_one_time_teacher,
+        one_time_teacher_name,
+        users:user_id (
+          id,
+          name,
+          phone_number
+        )
+      ),
+      pricing:event_pricing (
+        id,
+        price_type,
+        price,
+        description
+      ),
+      seminar_days (
+        id,
+        day_number,
+        date,
+        theme,
+        seminar_day_classes (
           id,
           class_name,
           start_time,
           end_time,
           class_level,
           class_order
-        ),
-        practice:event_practices (
-          id,
-          practice_time,
-          practice_end_time
-        ),
-        organizers:event_organizers (
-          id,
-          organizer_type,
-          is_primary,
-          is_one_time_teacher,
-          one_time_teacher_name,
-          users:user_id (
-            id,
-            name,
-            phone_number
-          )
-        ),
-        pricing:event_pricing (
-          id,
-          price_type,
-          price,
-          description
-        ),
-        seminar_days (
-          id,
-          day_number,
-          date,
-          theme,
-          seminar_day_classes (
-            id,
-            class_name,
-            start_time,
-            end_time,
-            class_level,
-            class_order
-          )
-        ),
-        milonga_pre_class:milonga_pre_classes (
-          id,
-          class_time,
-          class_end_time,
-          class_level,
-          milonga_start_time
         )
-      `
+      ),
+      milonga_pre_class:milonga_pre_classes (
+        id,
+        class_time,
+        class_end_time,
+        class_level,
+        milonga_start_time
       )
-      .eq('id', id)
-      .eq('is_active', true)
-      .is('deleted_at', null)
-      .single();
+    `;
 
-    if (error) {
+    let query = supabase
+      .from('tango_events')
+      .select(selectQuery)
+      .eq('id', eventId)
+      .eq('is_active', true)
+      .is('deleted_at', null);
+
+    if (eventDate) {
+      query = query.eq('date', eventDate);
+    }
+
+    let { data: event, error } = await query.single();
+
+    if (error?.code === 'PGRST116' && eventDate) {
+      const { data: baseEvent, error: baseError } = await supabase
+        .from('tango_events')
+        .select(selectQuery)
+        .eq('id', eventId)
+        .eq('is_active', true)
+        .is('deleted_at', null)
+        .single();
+
+      if (!baseError && baseEvent?.has_weekly_recurrence) {
+        event = { ...baseEvent, date: eventDate };
+      } else {
+        event = baseEvent;
+      }
+    }
+
+    if (!event) {
       console.error('Server-side fetch error:', error);
       return null;
     }
@@ -104,7 +128,6 @@ async function getEventById(id: string): Promise<CompleteEventData | null> {
     return null;
   }
 }
-
 function EventLoading() {
   return (
     <div className="min-h-screen bg-background">
@@ -181,16 +204,6 @@ function EventDetail({ event }: { event: CompleteEventData }) {
       all_levels: 'Todos los niveles',
     };
     return levels[level] || level;
-  };
-
-  const getEventTypeColor = (type: EventType) => {
-    const colorMap = {
-      special_event: 'secondary',
-      class: 'primary',
-      seminar: 'success',
-      milonga: 'warning',
-    };
-    return colorMap[type] || 'default';
   };
 
   const getEventTypeIcon = (type: EventType | 'practice') => {
@@ -276,7 +289,14 @@ function EventDetail({ event }: { event: CompleteEventData }) {
 
     return schedule.sort((a, b) => a.time.localeCompare(b.time));
   };
+  function parseLocalDate(dateString: string): Date {
+    const [year, month, day] = dateString.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  }
 
+  function formatEventDate(dateString: string): string {
+    return format(parseLocalDate(dateString), 'EEEE, dd MMMM yyyy', { locale: es });
+  }
   const eventChips = getEventChips();
   const schedule = getSchedule();
 
@@ -337,11 +357,7 @@ function EventDetail({ event }: { event: CompleteEventData }) {
                   Fecha
                 </h3>
                 <div className="flex items-center gap-2 text-default-700">
-                  <span className="font-medium">
-                    {format(new Date(event.date), 'EEEE, dd MMMM yyyy', {
-                      locale: es,
-                    })}
-                  </span>
+                  <span className="font-medium">{formatEventDate(event.date)}</span>
                 </div>
                 {event.has_weekly_recurrence && (
                   <div className="text-sm text-default-600">Se repite semanalmente</div>
@@ -424,10 +440,7 @@ function EventDetail({ event }: { event: CompleteEventData }) {
                   </h3>
                   <div className="space-y-2">
                     {schedule.map((item, index) => (
-                      <div
-                        key={index}
-                        className="p-3 bg-default-50 rounded-lg"
-                      >
+                      <div key={index} className="p-3 bg-default-50 rounded-lg">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2 flex-1">
                             <span className="text-sm">
