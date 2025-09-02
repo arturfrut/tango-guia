@@ -1,3 +1,9 @@
+import { SVGProps } from 'react';
+
+export type IconSvgProps = SVGProps<SVGSVGElement> & {
+  size?: number;
+};
+
 export type ClassLevel = 'beginner' | 'intermediate' | 'advanced' | 'all_levels';
 export type EventType = 'class' | 'seminar' | 'milonga' | 'special_event';
 export type OrganizerType = 'teacher' | 'special_user';
