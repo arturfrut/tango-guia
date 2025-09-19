@@ -3,11 +3,10 @@ import { Viewport } from 'next';
 import clsx from 'clsx';
 
 import { Providers } from './providers';
-
 import { fontSans } from '@/config/fonts';
 import { Navbar } from '@/components/navbar';
 import { QueryProvider } from './providers/QueryProvider';
-
+import { SEOHead } from '@/components/Head/SEOHead';
 import { pagesMetadata } from '@/config/metadata';
 
 export const metadata = pagesMetadata.home;
@@ -21,8 +20,10 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html suppressHydrationWarning lang="en">
-      <head />
+    <html suppressHydrationWarning lang="es-AR">
+      <head>
+        <SEOHead structuredData={{}} />
+      </head>
       <body
         className={clsx(
           'min-h-screen text-foreground bg-background font-sans antialiased',
