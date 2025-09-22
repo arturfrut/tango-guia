@@ -11,7 +11,7 @@ export const pagesMetadata: Record<string, Metadata> = {
       'TangoGuía es la plataforma definitiva para descubrir el tango en Mar del Plata. Encontrá clases, milongas, eventos, el Semillero tanguero y toda la comunidad en un solo lugar.',
     keywords: [
       'tangoguia',
-      'tango guía', 
+      'tango guía',
       'tango mar del plata',
       'milongas mar del plata',
       'clases tango',
@@ -20,7 +20,7 @@ export const pagesMetadata: Record<string, Metadata> = {
       'comunidad tanguera',
       'tango argentino',
       'agenda tango',
-      'aprender tango'
+      'aprender tango',
     ].join(', '),
     authors: [{ name: 'TangoGuía' }],
     creator: 'TangoGuía',
@@ -30,7 +30,7 @@ export const pagesMetadata: Record<string, Metadata> = {
       address: false,
       telephone: false,
     },
-    icons: { 
+    icons: {
       icon: '/favicon.ico',
       shortcut: '/favicon-16x16.png',
       apple: '/apple-touch-icon.png',
@@ -66,14 +66,14 @@ export const pagesMetadata: Record<string, Metadata> = {
       locale: 'es_AR',
       type: 'website',
     },
-
   },
-  
+
   semillero: {
     title: 'El Semillero - Jóvenes y Tango | TangoGuía Mar del Plata',
     description:
       'El Semillero de TangoGuía: clases gratuitas y beneficios para jóvenes de 18 a 35 años que quieran aprender tango en Mar del Plata. Creando la nueva generación tanguera.',
-    keywords: 'semillero tango, jóvenes tango, clases gratis tango, nueva generación tanguera, mar del plata',
+    keywords:
+      'semillero tango, jóvenes tango, clases gratis tango, nueva generación tanguera, mar del plata',
     alternates: {
       canonical: 'https://tangoguia.com/semillero',
     },
@@ -98,11 +98,12 @@ export const pagesMetadata: Record<string, Metadata> = {
     twitter: {
       card: 'summary_large_image',
       title: 'El Semillero - Jóvenes y Tango | TangoGuía',
-      description: 'Clases gratis y beneficios para jóvenes de 18 a 35 años que quieran vivir el tango.',
+      description:
+        'Clases gratis y beneficios para jóvenes de 18 a 35 años que quieran vivir el tango.',
       images: ['/images/og-semillero.jpg'],
     },
   },
-  
+
   sobreTango: {
     title: 'Sobre TangoGuía - Proyecto Tanguero en Mar del Plata',
     description:
@@ -116,7 +117,7 @@ export const pagesMetadata: Record<string, Metadata> = {
       title: 'Sobre TangoGuía - Proyecto Tanguero en Mar del Plata',
       description:
         'TangoGuía es la herramienta digital que une a la comunidad tanguera de Mar del Plata. Agenda, beneficios y más.',
-      url: 'https://tangoguia.com/sobre-tango',
+      url: 'https://www.tangoguia.com/sobre-tango',
       siteName: 'TangoGuía',
       images: [
         {
@@ -136,7 +137,7 @@ export const pagesMetadata: Record<string, Metadata> = {
       images: ['/images/og-sobre.jpg'],
     },
   },
-  
+
   recomendaciones: {
     title: 'Recomendaciones y Denuncias | TangoGuía Mar del Plata',
     description:
@@ -170,19 +171,21 @@ export const pagesMetadata: Record<string, Metadata> = {
       images: ['/images/og-recomendaciones.jpg'],
     },
   },
-  
+
   agenda: {
     title: 'Agenda Semanal de Tango | TangoGuía Mar del Plata',
     description:
       'Agenda actualizada de TangoGuía: todas las clases, milongas y prácticas de tango en Mar del Plata para esta semana. Nunca te pierdas un evento tanguero.',
-    keywords: 'agenda tango, milongas mar del plata, clases tango semanal, eventos tango, práctica tango',
+    keywords:
+      'agenda tango, milongas mar del plata, clases tango semanal, eventos tango, práctica tango',
     alternates: {
       canonical: 'https://tangoguia.com/agenda',
     },
     icons: { icon: '/favicon.ico' },
     openGraph: {
       title: 'Agenda Semanal de Tango | TangoGuía',
-      description: 'Agenda actualizada de TangoGuía con todas las clases y milongas en Mar del Plata.',
+      description:
+        'Agenda actualizada de TangoGuía con todas las clases y milongas en Mar del Plata.',
       url: 'https://tangoguia.com/agenda',
       siteName: 'TangoGuía',
       images: [
