@@ -1,8 +1,13 @@
 import { Metadata } from 'next';
 import { siteConfig } from './site';
 
+const baseUrl = process.env.NODE_ENV === 'production' 
+  ? 'https://tangoguia.com' 
+  : 'http://localhost:3000';
+
 export const pagesMetadata: Record<string, Metadata> = {
   home: {
+    metadataBase: new URL(baseUrl),
     title: {
       default: 'TangoGuía - Tango en Mar del Plata | Clases, Milongas y Comunidad',
       template: `%s | ${siteConfig.name}`,
@@ -31,7 +36,7 @@ export const pagesMetadata: Record<string, Metadata> = {
       telephone: false,
     },
     icons: {
-      icon: '/favicon.ico',
+      icon: '/favicon.svg',
       shortcut: '/favicon-16x16.png',
       apple: '/apple-touch-icon.png',
     },
@@ -69,6 +74,7 @@ export const pagesMetadata: Record<string, Metadata> = {
   },
 
   semillero: {
+    metadataBase: new URL(baseUrl),
     title: 'El Semillero - Jóvenes y Tango | TangoGuía Mar del Plata',
     description:
       'El Semillero de TangoGuía: clases gratuitas y beneficios para jóvenes de 18 a 35 años que quieran aprender tango en Mar del Plata. Creando la nueva generación tanguera.',
@@ -77,7 +83,7 @@ export const pagesMetadata: Record<string, Metadata> = {
     alternates: {
       canonical: 'https://tangoguia.com/semillero',
     },
-    icons: { icon: '/favicon.ico' },
+    icons: { icon: '/favicon.svg' },
     openGraph: {
       title: 'El Semillero - Jóvenes y Tango | TangoGuía',
       description:
@@ -105,6 +111,7 @@ export const pagesMetadata: Record<string, Metadata> = {
   },
 
   sobreTango: {
+    metadataBase: new URL(baseUrl),
     title: 'Sobre TangoGuía - Proyecto Tanguero en Mar del Plata',
     description:
       'Conocé TangoGuía: el proyecto que conecta clases, milongas, docentes y la comunidad tanguera en Mar del Plata, con foco en atraer nuevas generaciones al tango argentino.',
@@ -112,7 +119,7 @@ export const pagesMetadata: Record<string, Metadata> = {
     alternates: {
       canonical: 'https://tangoguia.com/sobre-tango',
     },
-    icons: { icon: '/favicon.ico' },
+    icons: { icon: '/favicon.svg' },
     openGraph: {
       title: 'Sobre TangoGuía - Proyecto Tanguero en Mar del Plata',
       description:
@@ -139,6 +146,7 @@ export const pagesMetadata: Record<string, Metadata> = {
   },
 
   recomendaciones: {
+    metadataBase: new URL(baseUrl),
     title: 'Recomendaciones y Denuncias | TangoGuía Mar del Plata',
     description:
       'Enviá tus sugerencias o denuncias a TangoGuía para mejorar el tango en Mar del Plata. Mantené el anonimato o compartí tus datos, vos elegís cómo participar.',
@@ -146,7 +154,7 @@ export const pagesMetadata: Record<string, Metadata> = {
     alternates: {
       canonical: 'https://tangoguia.com/recomendaciones',
     },
-    icons: { icon: '/favicon.ico' },
+    icons: { icon: '/favicon.svg' },
     openGraph: {
       title: 'Recomendaciones y Denuncias | TangoGuía',
       description:
@@ -173,6 +181,7 @@ export const pagesMetadata: Record<string, Metadata> = {
   },
 
   agenda: {
+    metadataBase: new URL(baseUrl),
     title: 'Agenda Semanal de Tango | TangoGuía Mar del Plata',
     description:
       'Agenda actualizada de TangoGuía: todas las clases, milongas y prácticas de tango en Mar del Plata para esta semana. Nunca te pierdas un evento tanguero.',
@@ -181,7 +190,7 @@ export const pagesMetadata: Record<string, Metadata> = {
     alternates: {
       canonical: 'https://tangoguia.com/agenda',
     },
-    icons: { icon: '/favicon.ico' },
+    icons: { icon: '/favicon.svg' },
     openGraph: {
       title: 'Agenda Semanal de Tango | TangoGuía',
       description:

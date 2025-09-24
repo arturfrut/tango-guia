@@ -49,9 +49,9 @@ export default function Home() {
 
           <Link
             href="/recomendaciones"
-            className="text-sm justify-center text-default-500 hover:underline text-center col-span-1 sm:col-span-2"
+            className="pb-16 text-sm justify-center text-default-500 hover:underline text-center col-span-1 sm:col-span-2"
           >
-            Denuncias y sugerencias
+            Denuncias y recomendaciones
           </Link>
         </div>
       </div>

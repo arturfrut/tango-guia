@@ -177,12 +177,12 @@ export default async function EventPage({ params }: EventPageProps) {
 
   return (
     <Suspense fallback={<EventLoading />}>
-      <EventDetail event={event} />
+      <EventDetail event={event} id={id} />
     </Suspense>
   );
 }
 
-function EventDetail({ event }: { event: CompleteEventData }) {
+function EventDetail({ event, id }: { event: CompleteEventData; id: string }) {
   const allOrganizers = event.organizers || [];
 
   const formatEventType = (type: EventType) => {
@@ -299,6 +299,11 @@ function EventDetail({ event }: { event: CompleteEventData }) {
   }
   const eventChips = getEventChips();
   const schedule = getSchedule();
+  const eventId = event.date ? `${event.id}_${event.date}` : event.id;
+  const whatsappMessage = `Hola te escribo desde esta página https://www.tangoguia.com/agenda/${eventId}, para preguntarte sobre ${event.title}`;
+
+  const wpLink = (contactPhone: string) =>
+    `https://api.whatsapp.com/send?phone=${contactPhone.replace(/\D/g, '')}&text=${encodeURIComponent(whatsappMessage)}`;
 
   return (
     <div className="min-h-screen bg-background">
@@ -359,9 +364,9 @@ function EventDetail({ event }: { event: CompleteEventData }) {
                 <div className="flex items-center gap-2 text-default-700">
                   <span className="font-medium">{formatEventDate(event.date)}</span>
                 </div>
-                {event.has_weekly_recurrence && (
-                  <div className="text-sm text-default-600">Se repite semanalmente</div>
-                )}
+                {/* {event.has_weekly_recurrence && (
+                  <div className="text-sm text-default-600">(Todas las semanas)</div>
+                )} */}
               </div>
 
               {event.address && (
@@ -393,20 +398,10 @@ function EventDetail({ event }: { event: CompleteEventData }) {
 
                       return (
                         <div key={index} className="flex items-center gap-3">
-                          <Avatar
-                            name={organizerName || 'Organizador'}
-                            size="sm"
-                            className="flex-shrink-0"
-                          />
                           <div>
                             <div className="font-medium text-default-700 flex items-center gap-2">
                               {organizerName || 'Organizador'}
                             </div>
-                            {!organizer.is_one_time_teacher && organizer.users?.phone_number && (
-                              <div className="text-xs text-default-500">
-                                {organizer.users.phone_number}
-                              </div>
-                            )}
                           </div>
                         </div>
                       );
@@ -419,7 +414,7 @@ function EventDetail({ event }: { event: CompleteEventData }) {
                 <div className="space-y-2">
                   <h3 className="font-semibold text-lg">Contacto</h3>
                   <a
-                    href={`https://wa.me/${event.contact_phone.replace(/\D/g, '')}`}
+                    href={wpLink(event.contact_phone)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-2 text-green-600 hover:text-green-700 font-medium"

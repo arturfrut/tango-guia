@@ -22,7 +22,7 @@ function EventsLoading() {
                 d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 002 2z"
               />
             </svg>
-            <h1 className="text-4xl font-bold text-foreground">Eventos y Clases</h1>
+            <h1 className="text-4xl font-bold text-foreground">Tango esta semana</h1>
           </div>
         </div>
 
@@ -59,10 +59,10 @@ export default async function EventsPage(props: PageProps) {
                 d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 002 2z"
               />
             </svg>
-            <h1 className="text-4xl font-bold text-foreground">Eventos y Clases</h1>
+            <h1 className="text-4xl font-bold text-foreground">Tango esta semana</h1>
           </div>
           <p className="text-default-500 text-lg">
-            Descubre las próximas clases, milongas y eventos especiales
+            Descubrí las próximas clases, milongas y eventos especiales
           </p>
         </div>
 

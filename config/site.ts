@@ -20,7 +20,7 @@ export const siteConfig = {
       href: '/sobre-tango',
     },
     {
-      label: 'Sugerencias',
+      label: 'Recomendaciones',
       href: '/recomendaciones',
     },
   ],
@@ -42,7 +42,7 @@ export const siteConfig = {
       href: '/sobre-tango',
     },
     {
-      label: 'Sugerencias',
+      label: 'Recomendaciones',
       href: '/recomendaciones',
     },
   ],

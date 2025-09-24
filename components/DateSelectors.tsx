@@ -2,9 +2,9 @@
 
 import { Button } from '@heroui/button';
 import { Card, CardBody } from '@heroui/card';
-import { addDays, format, startOfDay } from 'date-fns';
-import { es } from 'date-fns/locale';
-import { useMemo } from 'react';
+import { DateSelectorMobile } from './DateSelectorMobile';
+import { Key } from 'react';
+import { useDateSelector } from '@/app/hooks/useDateSelector';
 
 interface DateSelectorProps {
   selectedDate: Date;
@@ -13,48 +13,27 @@ interface DateSelectorProps {
 }
 
 export function DateSelector({ selectedDate, onDateSelect, initialDate }: DateSelectorProps) {
-  const days = useMemo(() => {
-    const today = startOfDay(new Date());
-    const yesterday = addDays(today, -1);
-    return Array.from({ length: 7 }, (_, i) => addDays(yesterday, i));
-  }, []);
-
-  const formatDayButton = (date: Date) => {
-    const dayName = format(date, 'EEE', { locale: es }).toUpperCase();
-    const dayNumber = format(date, 'd/M');
-    return { dayName, dayNumber };
-  };
-
-  const isToday = (date: Date) => {
-    return format(date, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
-  };
-
-  const isSelected = (date: Date) => {
-    return format(date, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd');
-  };
-
-  const getButtonVariant = (date: Date) => {
-    if (isSelected(date)) return 'solid';
-    if (isToday(date)) return 'bordered';
-    return 'light';
-  };
-
-  const getButtonColor = (date: Date) => {
-    if (isSelected(date)) return 'primary';
-    if (isToday(date)) return 'success';
-    return 'default';
-  };
+  const {
+    days,
+    isToday,
+    isSelected,
+    formatDayButton,
+    getButtonVariant,
+    getButtonColor,
+    handleDateSelect,
+  } = useDateSelector({ selectedDate, onDateSelect, initialDate });
 
   return (
     <Card className="w-full shadow-md">
       <CardBody className="p-5">
-        <div className="flex flex-wrap gap-3 justify-center">
-          {days.map((day) => {
+        {/* Desktop version - hidden on mobile (md breakpoint = 768px) */}
+        <div className="hidden md:flex flex-wrap gap-3 justify-center">
+          {days.map((day: Date) => {
             const { dayName, dayNumber } = formatDayButton(day);
             return (
               <Button
                 key={day.toISOString()}
-                onClick={() => onDateSelect(startOfDay(day))}
+                onClick={() => handleDateSelect(day)}
                 variant={getButtonVariant(day)}
                 color={getButtonColor(day)}
                 className="flex-col h-16 min-w-20 relative"
@@ -68,6 +47,15 @@ export function DateSelector({ selectedDate, onDateSelect, initialDate }: DateSe
               </Button>
             );
           })}
+        </div>
+
+        {/* Mobile version - hidden on desktop */}
+        <div className="block md:hidden">
+          <DateSelectorMobile
+            selectedDate={selectedDate}
+            onDateSelect={onDateSelect}
+            initialDate={initialDate}
+          />
         </div>
       </CardBody>
     </Card>
