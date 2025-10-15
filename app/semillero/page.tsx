@@ -33,7 +33,7 @@ export default function SemilleroPage() {
         <p>
           Además, nace un grupo específico llamado <strong>El Semillero</strong>, un espacio joven
           donde vas a poder tomar <strong>un mes entero de clases gratuitas</strong> todos los
-          martes a las 20 hs, en Buenos Aires 1232, Hotel Trenquelauquen.
+          martes a las 20 hs, en Buenos Aires 1232, Hotel Rucalen.
         </p>
         <p>
           Las clases están a cargo de <strong>Melanie Salinas</strong>, una profesora excelente y
