@@ -8,6 +8,7 @@ import { Navbar } from '@/components/navbar';
 import { QueryProvider } from './providers/QueryProvider';
 import { SEOHead } from '@/components/Head/SEOHead';
 import { pagesMetadata } from '@/config/metadata';
+import Script from 'next/script';
 
 export const metadata = pagesMetadata.home;
 
@@ -19,6 +20,10 @@ export const viewport: Viewport = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+
+    const clarityId = process.env.NEXT_PUBLIC_CLARITY_ID;
+
+
   return (
     <html suppressHydrationWarning lang="es-AR">
       <head>
@@ -30,6 +35,20 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           fontSans.variable
         )}
       >
+          <Script
+            id="clarity-script"
+            strategy="afterInteractive"
+            dangerouslySetInnerHTML={{
+              __html: `
+                (function(c,l,a,r,i,t,y){
+                  c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+                  t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+                  y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+                })(window, document, "clarity", "script", "${clarityId}");
+              `,
+            }}
+          />
+
         <Providers themeProps={{ attribute: 'class', defaultTheme: 'system' }}>
           <QueryProvider>
             <div className="relative flex flex-col h-screen">
