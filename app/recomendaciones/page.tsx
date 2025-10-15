@@ -1,3 +1,4 @@
+import ModalButton from '@/components/Modal';
 import Link from 'next/link';
 
 export default function DenunciasPage() {
@@ -30,12 +31,21 @@ export default function DenunciasPage() {
       </div>
 
       {/* Botón para hablar con Mia */}
-      <Link
+      {/* <Link
         href="https://wa.me/549XXXXXXXXX" // reemplazar por el número real de Mia
         className="bg-primary text-white px-6 py-3 rounded-xl font-medium hover:opacity-90 text-center"
       >
         Hablar con Mia
-      </Link>
+      </Link> */}
+
+      <ModalButton
+        buttonText="Hablar con Mia"
+        modal={{
+          icon: '⏳',
+          title: 'Función en desarrollo',
+          body: 'Lo sentimos, esta función está en proceso. Nos comprometemos a tenerla lista en unos días.',
+        }}
+      />
     </section>
   );
 }

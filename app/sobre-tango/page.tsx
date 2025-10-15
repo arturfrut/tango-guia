@@ -69,7 +69,9 @@ export default function SobreTangoPage() {
 
       <div className="flex flex-col gap-4 w-full max-w-md px-4">
         <Link
-          href="#"
+          href="https://www.instagram.com/tangoguia"
+          target="_blank"
+          rel="noopener noreferrer"
           className="bg-primary text-white px-6 py-3 rounded-xl font-medium hover:opacity-90 text-center"
         >
           Más info / Quiero ayudar!

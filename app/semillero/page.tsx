@@ -48,7 +48,9 @@ export default function SemilleroPage() {
 
       <div className="flex flex-col gap-4 w-full max-w-md px-4">
         <Link
-          href="/contacto" // o el link que corresponda para "más info"
+          href="https://docs.google.com/forms/d/1gGVltVLSi3f0T9tVadwimlyJj7eTZN4UE52lL61bSzk/edit"
+          target="_blank"
+          rel="noopener noreferrer"
           className="bg-primary text-white px-6 py-3 rounded-xl font-medium hover:opacity-90 text-center"
         >
           Quiero más info

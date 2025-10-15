@@ -47,6 +47,6 @@ export const siteConfig = {
     },
   ],
   links: {
-    instagram: 'https://instagram.com/tango_guia',
+    instagram: 'https://instagram.com/tangoguia',
   },
 };
