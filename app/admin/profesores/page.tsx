@@ -14,7 +14,6 @@ import {
   ModalFooter,
   useDisclosure,
 } from '@heroui/modal';
-import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell } from '@heroui/table';
 import { ArrowLeft, Plus, Pencil, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
