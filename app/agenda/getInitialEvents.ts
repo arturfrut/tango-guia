@@ -1,6 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
 import { EventsResponse } from '../types';
 
+
+const SEMILLERO_ID = '990aa66a-d494-495d-8cb5-6785c84cb026';
+
 export async function getInitialEvents(date: Date): Promise<EventsResponse> {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -141,29 +144,33 @@ export async function getInitialEvents(date: Date): Promise<EventsResponse> {
       .eq('has_weekly_recurrence', true)
       .eq('is_active', true)
       .is('deleted_at', null)
-      .lt('date', dateString);
+      .neq('date', dateString);
 
     let allEvents = events || [];
 
     if (recurringEvents && !recurringError) {
       const recurringEventsForToday = recurringEvents.filter((event) => {
-        const eventDate = new Date(event.date);
+        const [year, month, day] = event.date.split('-').map(Number);
+        const eventDate = new Date(year, month - 1, day);
         const eventDayOfWeek = eventDate.getDay();
-        
-        return eventDayOfWeek === dayOfWeek && eventDate < date;
+        return eventDayOfWeek === dayOfWeek;
       });
 
       for (const recurringEvent of recurringEventsForToday) {
         const eventCopy = {
           ...recurringEvent,
           date: dateString,
-          id: `${recurringEvent.id}_${dateString}`
+          id: `${recurringEvent.id}_${dateString}`,
         };
         allEvents.push(eventCopy);
       }
     }
 
     const sortedEvents = allEvents.sort((a, b) => {
+      const aIsSemillero = a.id === SEMILLERO_ID || a.id.startsWith(SEMILLERO_ID);
+      const bIsSemillero = b.id === SEMILLERO_ID || b.id.startsWith(SEMILLERO_ID);
+      if (aIsSemillero) return -1;
+      if (bIsSemillero) return 1;
       return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
     });
 
@@ -171,8 +178,8 @@ export async function getInitialEvents(date: Date): Promise<EventsResponse> {
       ...event,
       seminar_days: event.seminar_days?.map((day: any) => ({
         ...day,
-        classes: day.seminar_day_classes || []
-      }))
+        classes: day.seminar_day_classes || [],
+      })),
     }));
 
     return {

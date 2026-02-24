@@ -11,6 +11,8 @@ interface EventCardProps {
   onClick?: () => void;
 }
 
+const SEMILLERO_ID = '990aa66a-d494-495d-8cb5-6785c84cb026';
+
 export function EventCard({ event, onClick }: EventCardProps) {
   const router = useRouter();
 
@@ -62,7 +64,7 @@ export function EventCard({ event, onClick }: EventCardProps) {
       }
     }
 
-    if (event.practice) {
+    if (event.practice && event.practice.length > 0) {
       chips.push({
         type: 'practice',
         label: 'Práctica',
@@ -126,11 +128,15 @@ export function EventCard({ event, onClick }: EventCardProps) {
   const eventChips = getEventChips();
   const schedules = getScheduleInfo();
   const instructors = getInstructors();
+  const isSemillero = event.id === SEMILLERO_ID || event.id.startsWith(SEMILLERO_ID);
+
   return (
     <Card
       isPressable
       onPress={handleCardClick}
-      className="w-full hover:scale-[1.01] transition-all duration-200 shadow-md hover:shadow-lg"
+      className={`w-full hover:scale-[1.01] transition-all duration-200 shadow-md hover:shadow-lg ${
+        isSemillero ? 'border border-green-500 shadow-green-500/20 bg-green-950/20' : ''
+      }`}
     >
       <CardBody className="p-5">
         <div className="flex items-center gap-4">
@@ -149,7 +155,15 @@ export function EventCard({ event, onClick }: EventCardProps) {
           </div>
 
           <div className="flex-1 min-w-0">
+                          {isSemillero && (
+                <div className="flex items-center gap-1 mb-2">
+                  <span className="text-xs font-semibold text-green-400 tracking-wide">
+                    ⭐ Recomendación TangoGuia
+                  </span>
+                </div>
+              )}
             <div className="flex flex-wrap gap-2 mb-3">
+
               {eventChips.map((chip, index) => (
                 <Chip
                   key={index}
