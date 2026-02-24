@@ -41,17 +41,17 @@ async function getEventById(id: string): Promise<CompleteEventData | null> {
         practice_end_time
       ),
       organizers:event_organizers (
-        id,
-        organizer_type,
-        is_primary,
-        is_one_time_teacher,
-        one_time_teacher_name,
-        users:user_id (
           id,
-          name,
-          phone_number
-        )
-      ),
+          organizer_type,
+          is_primary,
+          is_one_time_teacher,
+          one_time_teacher_name,
+          teachers:teacher_id (
+            id,
+            name,
+            phone_number
+          )
+        ),
       pricing:event_pricing (
         id,
         price_type,
@@ -394,8 +394,7 @@ function EventDetail({ event, id }: { event: CompleteEventData; id: string }) {
                     {allOrganizers.map((organizer, index) => {
                       const organizerName = organizer.is_one_time_teacher
                         ? organizer.one_time_teacher_name
-                        : organizer.users?.name;
-
+                        : organizer.teachers?.name;
                       return (
                         <div key={index} className="flex items-center gap-3">
                           <div>

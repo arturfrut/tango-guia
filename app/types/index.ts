@@ -32,14 +32,14 @@ export interface EventPractice {
 export interface EventOrganizer {
   id: string;
   event_id: string;
-  user_id?: string;
+  teacher_id?: string;
   organizer_type: OrganizerType;
   is_primary: boolean;
   is_one_time_teacher: boolean;
   one_time_teacher_name?: string;
   created_at: string;
   // Relations
-  users?: {
+  teachers?: {
     id: string;
     name?: string;
     phone_number: string;
@@ -111,7 +111,7 @@ export interface TangoEvent {
   deleted_at?: string;
 }
 
-// Complete event with all relations - this replaces EventWithDetails
+// Complete event with all relations
 export interface CompleteEventData extends TangoEvent {
   classes?: EventClass[];
   practice?: EventPractice[];
@@ -134,55 +134,4 @@ export interface ApiResponse<T = any> {
   success: boolean;
   data?: T;
   error?: string;
-}
-
-// Legacy types for compatibility during migration
-export interface EventSchedule {
-  id: string;
-  start_date: string;
-  end_date?: string;
-  start_time: string;
-  end_time?: string;
-  timezone: string;
-  recurrence_pattern: string;
-  recurrence_rule?: string;
-  days_of_week?: string[];
-  ends_at?: string;
-}
-
-export interface EventImage {
-  id: string;
-  image_url: string;
-  meta_media_id?: string;
-  caption?: string;
-  display_order: number;
-}
-
-export interface EventTeacher {
-  id: string;
-  is_primary_teacher: boolean;
-  teacher: {
-    id: string;
-    name?: string;
-    phone_number: string;
-  };
-}
-
-// Legacy EventWithDetails interface - will be deprecated
-export interface EventWithDetails {
-  id: string;
-  title: string;
-  event_type: string;
-  description?: string;
-  class_level?: string;
-  price?: number;
-  address: string;
-  is_active: boolean;
-  created_by: string;
-  created_at: string;
-  updated_at: string;
-  deleted_at?: string;
-  event_schedules?: EventSchedule[];
-  event_images?: EventImage[];
-  event_teachers?: EventTeacher[];
 }

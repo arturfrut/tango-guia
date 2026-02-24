@@ -8,7 +8,7 @@ export async function getInitialEvents(date: Date): Promise<EventsResponse> {
   );
 
   try {
-    const dateString = date.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+    const dateString = date.toISOString().split('T')[0];
     const dayOfWeek = date.getDay();
     const { data: events, error } = await supabase
       .from('tango_events')
@@ -34,7 +34,7 @@ export async function getInitialEvents(date: Date): Promise<EventsResponse> {
           is_primary,
           is_one_time_teacher,
           one_time_teacher_name,
-          users:user_id (
+          teachers:teacher_id (
             id,
             name,
             phone_number
@@ -103,7 +103,7 @@ export async function getInitialEvents(date: Date): Promise<EventsResponse> {
           is_primary,
           is_one_time_teacher,
           one_time_teacher_name,
-          users:user_id (
+          teachers:teacher_id (
             id,
             name,
             phone_number

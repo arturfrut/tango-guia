@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
           is_primary,
           is_one_time_teacher,
           one_time_teacher_name,
-          users:user_id (
+          teachers:teacher_id (
             id,
             name,
             phone_number
@@ -112,7 +112,7 @@ export async function GET(request: NextRequest) {
           is_primary,
           is_one_time_teacher,
           one_time_teacher_name,
-          users:user_id (
+          teachers:teacher_id (
             id,
             name,
             phone_number
@@ -189,8 +189,8 @@ export async function GET(request: NextRequest) {
           if (current.getDay() === dayOfWeek && current > originalDate) {
             const eventCopy = {
               ...recurringEvent,
-              date: current.toISOString().split('T')[0], // Format as YYYY-MM-DD
-              id: `${recurringEvent.id}_${current.toISOString().split('T')[0]}` // Unique ID for recurring instance
+              date: current.toISOString().split('T')[0],
+              id: `${recurringEvent.id}_${current.toISOString().split('T')[0]}`
             };
             allEvents.push(eventCopy);
           }

@@ -118,96 +118,95 @@ export function EventCard({ event, onClick }: EventCardProps) {
     if (!event.organizers || event.organizers.length === 0) return null;
 
     const instructors = event.organizers
-      .map((org) => (org.is_one_time_teacher ? org.one_time_teacher_name : org.users?.name))
+      .map((org) => (org.is_one_time_teacher ? org.one_time_teacher_name : org.teachers?.name))
       .filter(Boolean);
-
     return instructors;
   };
 
   const eventChips = getEventChips();
   const schedules = getScheduleInfo();
   const instructors = getInstructors();
-return (
-  <Card
-    isPressable
-    onPress={handleCardClick}
-    className="w-full hover:scale-[1.01] transition-all duration-200 shadow-md hover:shadow-lg"
-  >
-    <CardBody className="p-5">
-      <div className="flex items-center gap-4">
-        <div className="flex-shrink-0">
-          <Avatar
-            src={event.avatar_image_url}
-            name={event.title}
-            className=" mr-2 w-20 h-20 sm:w-16 sm:h-16 md:w-32 md:h-32 text-lg font-bold"
-            classNames={{
-              base: event.avatar_image_url
-                ? ''
-                : 'bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500',
-              name: 'text-white font-bold text-sm',
-            }}
-          />
-        </div>
-
-        <div className="flex-1 min-w-0">
-          <div className="flex flex-wrap gap-2 mb-3">
-            {eventChips.map((chip, index) => (
-              <Chip
-                key={index}
-                size="sm"
-                variant="flat"
-                color="primary"
-                startContent={<span className="text-sm">{chip.icon}</span>}
-                className="font-medium"
-              >
-                {chip.label}
-              </Chip>
-            ))}
+  return (
+    <Card
+      isPressable
+      onPress={handleCardClick}
+      className="w-full hover:scale-[1.01] transition-all duration-200 shadow-md hover:shadow-lg"
+    >
+      <CardBody className="p-5">
+        <div className="flex items-center gap-4">
+          <div className="flex-shrink-0">
+            <Avatar
+              src={event.avatar_image_url}
+              name={event.title}
+              className=" mr-2 w-20 h-20 sm:w-16 sm:h-16 md:w-32 md:h-32 text-lg font-bold"
+              classNames={{
+                base: event.avatar_image_url
+                  ? ''
+                  : 'bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500',
+                name: 'text-white font-bold text-sm',
+              }}
+            />
           </div>
 
-          <h3 className="font-bold text-lg text-foreground mb-2 line-clamp-2 leading-tight">
-            {event.title}
-          </h3>
-
-          {event.venue_name && (
-            <div className="flex items-center gap-2 mb-3">
-              <MapPin className="h-4 w-4 text-default-500 flex-shrink-0" />
-              <div className="min-w-0">
-                <p className="text-sm text-default-600 font-medium">{event.venue_name}</p>
-                {event.address && <p className="text-xs text-default-400">{event.address}</p>}
-              </div>
-            </div>
-          )}
-
-          {instructors && instructors.length > 0 && (
-            <div className="flex items-center gap-2 mb-3">
-              {instructors.length === 1 ? (
-                <User className="h-4 w-4 text-default-500" />
-              ) : (
-                <Users className="h-4 w-4 text-default-500" />
-              )}
-              <p className="text-sm text-default-600 font-medium">{instructors.join(' / ')}</p>
-            </div>
-          )}
-
-          {schedules.length > 0 && (
-            <div className="space-y-1 mb-4">
-              {schedules.map((schedule, index) => (
-                <div key={index} className="flex items-center gap-2 text-sm text-default-500">
-                  <Clock className="h-4 w-4" />
-                  <span className="font-medium">
-                    {schedule.name}: {schedule.time}
-                  </span>
-                </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex flex-wrap gap-2 mb-3">
+              {eventChips.map((chip, index) => (
+                <Chip
+                  key={index}
+                  size="sm"
+                  variant="flat"
+                  color="primary"
+                  startContent={<span className="text-sm">{chip.icon}</span>}
+                  className="font-medium"
+                >
+                  {chip.label}
+                </Chip>
               ))}
             </div>
-          )}
+
+            <h3 className="font-bold text-lg text-foreground mb-2 line-clamp-2 leading-tight">
+              {event.title}
+            </h3>
+
+            {event.venue_name && (
+              <div className="flex items-center gap-2 mb-3">
+                <MapPin className="h-4 w-4 text-default-500 flex-shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-sm text-default-600 font-medium">{event.venue_name}</p>
+                  {event.address && <p className="text-xs text-default-400">{event.address}</p>}
+                </div>
+              </div>
+            )}
+
+            {instructors && instructors.length > 0 && (
+              <div className="flex items-center gap-2 mb-3">
+                {instructors.length === 1 ? (
+                  <User className="h-4 w-4 text-default-500" />
+                ) : (
+                  <Users className="h-4 w-4 text-default-500" />
+                )}
+                <p className="text-sm text-default-600 font-medium">{instructors.join(' / ')}</p>
+              </div>
+            )}
+
+            {schedules.length > 0 && (
+              <div className="space-y-1 mb-4">
+                {schedules.map((schedule, index) => (
+                  <div key={index} className="flex items-center gap-2 text-sm text-default-500">
+                    <Clock className="h-4 w-4" />
+                    <span className="font-medium">
+                      {schedule.name}: {schedule.time}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
-      
-      <Divider className="mb-3" />
-      <p className="text-xs text-default-400 text-center">Haz click para más detalles</p>
-    </CardBody>
-  </Card>
-);
+
+        <Divider className="mb-3" />
+        <p className="text-xs text-default-400 text-center">Haz click para más detalles</p>
+      </CardBody>
+    </Card>
+  );
 }
