@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { createClient } from '@/app/utils/supabase/client';
-import { Card, CardBody, CardHeader } from '@heroui/card';
+import { Card, CardBody } from '@heroui/card';
 import { Button } from '@heroui/button';
 import { Input, Textarea } from '@heroui/input';
 import { Divider } from '@heroui/divider';
