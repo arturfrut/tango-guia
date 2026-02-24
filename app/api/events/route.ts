@@ -2,6 +2,7 @@ import { CompleteEventData } from '@/app/types';
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 
+const SEMILLERO_ID = '990aa66a-d494-495d-8cb5-6785c84cb026';
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -87,7 +88,7 @@ export async function GET(request: NextRequest) {
 
     const startDateObj = new Date(startDate);
     const endDateObj = endDate ? new Date(endDate) : startDateObj;
-    
+
     const { data: recurringEvents, error: recurringError } = await supabase
       .from('tango_events')
       .select(
@@ -149,11 +150,11 @@ export async function GET(request: NextRequest) {
       )
       .eq('is_active', true)
       .eq('has_weekly_recurrence', true)
-      .lt('date', startDate)
+      .neq('date', startDate)
       .is('deleted_at', null);
 
     const { data: events, error } = await query.order('date', { ascending: true });
-      
+
     if (error) {
       console.error('Supabase error:', error);
       return NextResponse.json({ error: 'Failed to fetch events' }, { status: 500 });
@@ -167,30 +168,30 @@ export async function GET(request: NextRequest) {
 
     if (recurringEvents && !recurringError) {
       const recurringEventsForPeriod = recurringEvents.filter((event) => {
-        const eventDate = new Date(event.date);
+        const [year, month, day] = event.date.split('-').map(Number);
+        const eventDate = new Date(year, month - 1, day);
         const dayOfWeek = eventDate.getDay();
-        
+
         const current = new Date(startDateObj);
         while (current <= endDateObj) {
-          if (current.getDay() === dayOfWeek && current > eventDate) {
+          if (current.getDay() === dayOfWeek) {
             return true;
           }
           current.setDate(current.getDate() + 1);
         }
         return false;
       });
-
       for (const recurringEvent of recurringEventsForPeriod) {
         const originalDate = new Date(recurringEvent.date);
         const dayOfWeek = originalDate.getDay();
-        
+
         const current = new Date(startDateObj);
         while (current <= endDateObj) {
           if (current.getDay() === dayOfWeek && current > originalDate) {
             const eventCopy = {
               ...recurringEvent,
               date: current.toISOString().split('T')[0],
-              id: `${recurringEvent.id}_${current.toISOString().split('T')[0]}`
+              id: `${recurringEvent.id}_${current.toISOString().split('T')[0]}`,
             };
             allEvents.push(eventCopy);
           }
@@ -200,15 +201,18 @@ export async function GET(request: NextRequest) {
     }
 
     const sortedEvents = allEvents.sort((a, b) => {
+      const aIsSemillero = a.id === SEMILLERO_ID || a.id.startsWith(SEMILLERO_ID);
+      const bIsSemillero = b.id === SEMILLERO_ID || b.id.startsWith(SEMILLERO_ID);
+      if (aIsSemillero) return -1;
+      if (bIsSemillero) return 1;
       return new Date(a.date).getTime() - new Date(b.date).getTime();
     });
-
     const transformedEvents = sortedEvents.map((event) => ({
       ...event,
       seminar_days: event.seminar_days?.map((day: any) => ({
         ...day,
-        classes: day.seminar_day_classes || []
-      }))
+        classes: day.seminar_day_classes || [],
+      })),
     }));
 
     return NextResponse.json({
