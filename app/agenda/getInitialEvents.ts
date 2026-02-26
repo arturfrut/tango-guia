@@ -1,7 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { EventsResponse } from '../types';
 
-
 const SEMILLERO_ID = '990aa66a-d494-495d-8cb5-6785c84cb026';
 
 export async function getInitialEvents(date: Date): Promise<EventsResponse> {
@@ -11,7 +10,11 @@ export async function getInitialEvents(date: Date): Promise<EventsResponse> {
   );
 
   try {
-    const dateString = date.toISOString().split('T')[0];
+    const dateString = [
+      date.getFullYear(),
+      String(date.getMonth() + 1).padStart(2, '0'),
+      String(date.getDate()).padStart(2, '0'),
+    ].join('-');
     const dayOfWeek = date.getDay();
     const { data: events, error } = await supabase
       .from('tango_events')

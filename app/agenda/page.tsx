@@ -38,7 +38,11 @@ function EventsLoading() {
 }
 
 export default async function EventsPage(props: PageProps) {
-  const today = new Date();
+  const today = new Date(
+    new Intl.DateTimeFormat('sv-SE', {
+      timeZone: 'America/Argentina/Buenos_Aires',
+    }).format(new Date())
+  );
   const initialEvents = await getInitialEvents(today);
 
   return (
