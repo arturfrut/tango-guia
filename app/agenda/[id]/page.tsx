@@ -15,6 +15,9 @@ interface EventPageProps {
   params: Promise<{ id: string }>;
 }
 
+const SEMILLERO_ID = '990aa66a-d494-495d-8cb5-6785c84cb026';
+const CALESITA_ID = '76071439-0832-4146-98df-79bcbd93674a';
+
 async function getEventById(id: string): Promise<CompleteEventData | null> {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -92,7 +95,7 @@ async function getEventById(id: string): Promise<CompleteEventData | null> {
       query = query.eq('date', eventDate);
     }
 
-    let { data: event, error } = await query.single();
+    let { data: fetchedEvent, error } = await query.single();
 
     if (error?.code === 'PGRST116' && eventDate) {
       const { data: baseEvent, error: baseError } = await supabase
@@ -104,30 +107,31 @@ async function getEventById(id: string): Promise<CompleteEventData | null> {
         .single();
 
       if (!baseError && baseEvent?.has_weekly_recurrence) {
-        event = { ...baseEvent, date: eventDate };
+        fetchedEvent = { ...baseEvent, date: eventDate };
       } else {
-        event = baseEvent;
+        fetchedEvent = baseEvent;
       }
     }
 
-    if (!event) {
+    if (!fetchedEvent) {
       console.error('Server-side fetch error:', error);
       return null;
     }
 
-    if (event?.seminar_days) {
-      event.seminar_days = event.seminar_days.map((day: any) => ({
+    if (fetchedEvent?.seminar_days) {
+      fetchedEvent.seminar_days = fetchedEvent.seminar_days.map((day: any) => ({
         ...day,
         classes: day.seminar_day_classes || [],
       }));
     }
 
-    return event as CompleteEventData;
+    return fetchedEvent as CompleteEventData;
   } catch (error) {
     console.error('Server-side error:', error);
     return null;
   }
 }
+
 function EventLoading() {
   return (
     <div className="min-h-screen bg-background">
@@ -170,20 +174,23 @@ function EventLoading() {
 
 export default async function EventPage({ params }: EventPageProps) {
   const { id } = await params;
-  const event = await getEventById(id);
-  if (!event) {
+  const eventData = await getEventById(id);
+  if (!eventData) {
     notFound();
   }
 
   return (
     <Suspense fallback={<EventLoading />}>
-      <EventDetail event={event} id={id} />
+      <EventDetail eventData={eventData} id={id} />
     </Suspense>
   );
 }
 
-function EventDetail({ event, id }: { event: CompleteEventData; id: string }) {
-  const allOrganizers = event.organizers || [];
+function EventDetail({ eventData, id }: { eventData: CompleteEventData; id: string }) {
+  const allOrganizers = eventData.organizers || [];
+
+  const baseId = eventData.id.includes('_') ? eventData.id.split('_')[0] : eventData.id;
+  const isRecommended = baseId === SEMILLERO_ID || baseId === CALESITA_ID;
 
   const formatEventType = (type: EventType) => {
     const types = {
@@ -221,12 +228,12 @@ function EventDetail({ event, id }: { event: CompleteEventData; id: string }) {
     const chips = [];
 
     chips.push({
-      type: event.event_type,
-      label: formatEventType(event.event_type),
-      icon: getEventTypeIcon(event.event_type),
+      type: eventData.event_type,
+      label: formatEventType(eventData.event_type),
+      icon: getEventTypeIcon(eventData.event_type),
     });
 
-    if (event.classes && event.classes.length > 0 && event.event_type !== 'class') {
+    if (eventData.classes && eventData.classes.length > 0 && eventData.event_type !== 'class') {
       chips.push({
         type: 'class' as EventType,
         label: 'Clase',
@@ -234,7 +241,7 @@ function EventDetail({ event, id }: { event: CompleteEventData; id: string }) {
       });
     }
 
-    if (event.practice && event.practice.length > 0) {
+    if (eventData.practice && eventData.practice.length > 0) {
       chips.push({
         type: 'practice',
         label: 'Práctica',
@@ -242,7 +249,7 @@ function EventDetail({ event, id }: { event: CompleteEventData; id: string }) {
       });
     }
 
-    if (event.milonga_pre_class && event.event_type !== 'milonga' && event.event_type !== 'class') {
+    if (eventData.milonga_pre_class && eventData.event_type !== 'milonga' && eventData.event_type !== 'class') {
       chips.push({
         type: 'class' as EventType,
         label: 'Clase',
@@ -256,8 +263,8 @@ function EventDetail({ event, id }: { event: CompleteEventData; id: string }) {
   const getSchedule = () => {
     const schedule = [];
 
-    if (event.classes && event.classes.length > 0) {
-      event.classes.forEach((cls) => {
+    if (eventData.classes && eventData.classes.length > 0) {
+      eventData.classes.forEach((cls) => {
         if (cls.start_time) {
           schedule.push({
             name: cls.class_name || 'Clase',
@@ -269,26 +276,27 @@ function EventDetail({ event, id }: { event: CompleteEventData; id: string }) {
       });
     }
 
-    if (event.practice && event.practice.length > 0 && event.practice[0].practice_time) {
+    if (eventData.practice && eventData.practice.length > 0 && eventData.practice[0].practice_time) {
       schedule.push({
         name: 'Práctica',
-        time: `${event.practice[0].practice_time.slice(0, 5)}${event.practice[0].practice_end_time ? ` - ${event.practice[0].practice_end_time.slice(0, 5)}` : ''}`,
+        time: `${eventData.practice[0].practice_time.slice(0, 5)}${eventData.practice[0].practice_end_time ? ` - ${eventData.practice[0].practice_end_time.slice(0, 5)}` : ''}`,
         level: null,
         type: 'practice',
       });
     }
 
-    if (event.milonga_pre_class && event.milonga_pre_class.class_time) {
+    if (eventData.milonga_pre_class && eventData.milonga_pre_class.class_time) {
       schedule.push({
         name: 'Clase',
-        time: `${event.milonga_pre_class.class_time.slice(0, 5)}${event.milonga_pre_class.class_end_time ? ` - ${event.milonga_pre_class.class_end_time.slice(0, 5)}` : ''}`,
-        level: event.milonga_pre_class.class_level,
+        time: `${eventData.milonga_pre_class.class_time.slice(0, 5)}${eventData.milonga_pre_class.class_end_time ? ` - ${eventData.milonga_pre_class.class_end_time.slice(0, 5)}` : ''}`,
+        level: eventData.milonga_pre_class.class_level,
         type: 'class',
       });
     }
 
     return schedule.sort((a, b) => a.time.localeCompare(b.time));
   };
+
   function parseLocalDate(dateString: string): Date {
     const [year, month, day] = dateString.split('-').map(Number);
     return new Date(year, month - 1, day);
@@ -297,10 +305,11 @@ function EventDetail({ event, id }: { event: CompleteEventData; id: string }) {
   function formatEventDate(dateString: string): string {
     return format(parseLocalDate(dateString), 'EEEE, dd MMMM yyyy', { locale: es });
   }
+
   const eventChips = getEventChips();
   const schedule = getSchedule();
-  const eventId = event.date ? `${event.id}_${event.date}` : event.id;
-  const whatsappMessage = `Hola te escribo desde esta página https://www.tangoguia.com/agenda/${eventId}, para preguntarte sobre ${event.title}`;
+  const eventId = eventData.date ? `${eventData.id}_${eventData.date}` : eventData.id;
+  const whatsappMessage = `Hola te escribo desde esta página https://www.tangoguia.com/agenda/${eventId}, para preguntarte sobre ${eventData.title}`;
 
   const wpLink = (contactPhone: string) =>
     `https://api.whatsapp.com/send?phone=${contactPhone.replace(/\D/g, '')}&text=${encodeURIComponent(whatsappMessage)}`;
@@ -308,7 +317,13 @@ function EventDetail({ event, id }: { event: CompleteEventData; id: string }) {
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto px-4 py-8">
-        <Card className="mb-6">
+        <Card
+          className={`mb-6 ${
+            isRecommended
+              ? 'border border-green-500 shadow-green-500/20 bg-green-50 dark:bg-green-950/20'
+              : ''
+          }`}
+        >
           <Link
             href="/agenda"
             className="pt-6 px-6 flex gap-3 items-center text-default-900 font-medium"
@@ -318,14 +333,23 @@ function EventDetail({ event, id }: { event: CompleteEventData; id: string }) {
           </Link>
 
           <Divider className="m-4" />
+
+          {isRecommended && (
+            <div className="px-6 pb-2">
+              <span className="text-xs font-semibold text-green-600 dark:text-green-400 tracking-wide">
+                ⭐ Recomendación TangoGuia
+              </span>
+            </div>
+          )}
+
           <CardHeader className="pb-4">
             <div className="flex items-start gap-4 mb-4">
               <Avatar
-                src={event.avatar_image_url}
-                name={event.title}
+                src={eventData.avatar_image_url}
+                name={eventData.title}
                 className="w-16 h-16 md:w-20 md:h-20 text-lg font-bold flex-shrink-0"
                 classNames={{
-                  base: event.avatar_image_url
+                  base: eventData.avatar_image_url
                     ? ''
                     : 'bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500',
                   name: 'text-white font-bold text-sm',
@@ -348,7 +372,7 @@ function EventDetail({ event, id }: { event: CompleteEventData; id: string }) {
                 </div>
 
                 <h1 className="text-2xl md:text-3xl font-bold text-foreground leading-tight">
-                  {event.title}
+                  {eventData.title}
                 </h1>
               </div>
             </div>
@@ -362,14 +386,11 @@ function EventDetail({ event, id }: { event: CompleteEventData; id: string }) {
                   Fecha
                 </h3>
                 <div className="flex items-center gap-2 text-default-700">
-                  <span className="font-medium">{formatEventDate(event.date)}</span>
+                  <span className="font-medium">{formatEventDate(eventData.date)}</span>
                 </div>
-                {/* {event.has_weekly_recurrence && (
-                  <div className="text-sm text-default-600">(Todas las semanas)</div>
-                )} */}
               </div>
 
-              {event.address && (
+              {eventData.address && (
                 <div className="space-y-2">
                   <h3 className="font-semibold text-lg flex items-center gap-2">
                     <MapPin className="w-5 h-5 text-primary" />
@@ -377,8 +398,8 @@ function EventDetail({ event, id }: { event: CompleteEventData; id: string }) {
                   </h3>
                   <div className="flex items-center gap-2 text-default-700">
                     <div>
-                      <p className="font-medium">{event.venue_name}</p>
-                      <p className="text-sm text-default-600">{event.address}</p>
+                      <p className="font-medium">{eventData.venue_name}</p>
+                      <p className="text-sm text-default-600">{eventData.address}</p>
                     </div>
                   </div>
                 </div>
@@ -409,11 +430,11 @@ function EventDetail({ event, id }: { event: CompleteEventData; id: string }) {
                 </div>
               )}
 
-              {event.contact_phone && (
+              {eventData.contact_phone && (
                 <div className="space-y-2">
                   <h3 className="font-semibold text-lg">Contacto</h3>
                   <a
-                    href={wpLink(event.contact_phone)}
+                    href={wpLink(eventData.contact_phone)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-2 text-green-600 hover:text-green-700 font-medium"
@@ -421,7 +442,7 @@ function EventDetail({ event, id }: { event: CompleteEventData; id: string }) {
                     <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.890-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488" />
                     </svg>
-                    {event.contact_phone}
+                    {eventData.contact_phone}
                   </a>
                 </div>
               )}
@@ -458,14 +479,14 @@ function EventDetail({ event, id }: { event: CompleteEventData; id: string }) {
                 </div>
               )}
 
-              {event.pricing && event.pricing.length > 0 && (
+              {eventData.pricing && eventData.pricing.length > 0 && (
                 <div className="space-y-2">
                   <h3 className="font-semibold text-lg flex items-center gap-2">
                     <DollarSign className="w-5 h-5 text-primary" />
                     Precios
                   </h3>
                   <div className="space-y-2">
-                    {event.pricing.map((price) => (
+                    {eventData.pricing.map((price) => (
                       <div
                         key={price.id}
                         className="flex items-center justify-between p-3 bg-default-50 rounded-lg"
@@ -486,20 +507,20 @@ function EventDetail({ event, id }: { event: CompleteEventData; id: string }) {
               )}
             </div>
 
-            {event.description && (
+            {eventData.description && (
               <div className="mb-6">
                 <h3 className="font-semibold text-lg mb-3">Descripción</h3>
                 <p className="text-default-700 leading-relaxed whitespace-pre-wrap">
-                  {event.description}
+                  {eventData.description}
                 </p>
               </div>
             )}
 
-            {event.show_description && (
+            {eventData.show_description && (
               <div className="mb-6">
                 <h3 className="font-semibold text-lg mb-3">Información del Show</h3>
                 <p className="text-default-700 leading-relaxed whitespace-pre-wrap">
-                  {event.show_description}
+                  {eventData.show_description}
                 </p>
               </div>
             )}

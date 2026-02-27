@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { EventsResponse } from '../types';
 
 const SEMILLERO_ID = '990aa66a-d494-495d-8cb5-6785c84cb026';
+const CALESITA_ID = '76071439-0832-4146-98df-79bcbd93674a';
 
 export async function getInitialEvents(date: Date): Promise<EventsResponse> {
   const supabase = createClient(
@@ -169,13 +170,15 @@ export async function getInitialEvents(date: Date): Promise<EventsResponse> {
       }
     }
 
-    const sortedEvents = allEvents.sort((a, b) => {
-      const aIsSemillero = a.id === SEMILLERO_ID || a.id.startsWith(SEMILLERO_ID);
-      const bIsSemillero = b.id === SEMILLERO_ID || b.id.startsWith(SEMILLERO_ID);
-      if (aIsSemillero) return -1;
-      if (bIsSemillero) return 1;
-      return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-    });
+const sortedEvents = allEvents.sort((a, b) => {
+  const aIsTop = a.id === SEMILLERO_ID || a.id.startsWith(SEMILLERO_ID) || 
+                 (dayOfWeek === 5 && (a.id === CALESITA_ID || a.id.startsWith(CALESITA_ID)));
+  const bIsTop = b.id === SEMILLERO_ID || b.id.startsWith(SEMILLERO_ID) || 
+                 (dayOfWeek === 5 && (b.id === CALESITA_ID || b.id.startsWith(CALESITA_ID)));
+  if (aIsTop) return -1;
+  if (bIsTop) return 1;
+  return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+});
 
     const transformedEvents = sortedEvents.map((event) => ({
       ...event,

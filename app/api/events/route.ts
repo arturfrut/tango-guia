@@ -3,6 +3,8 @@ import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 
 const SEMILLERO_ID = '990aa66a-d494-495d-8cb5-6785c84cb026';
+const CALESITA_ID = '76071439-0832-4146-98df-79bcbd93674a';
+
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -221,7 +223,17 @@ export async function GET(request: NextRequest) {
       const bIsSemillero = b.id === SEMILLERO_ID || b.id.startsWith(SEMILLERO_ID);
       if (aIsSemillero) return -1;
       if (bIsSemillero) return 1;
-      return parseDateStr(a.date).getTime() - parseDateStr(b.date).getTime(); // ✅ fix
+
+      const aDate = parseDateStr(a.date);
+      const isFriday = aDate.getDay() === 5;
+      if (isFriday) {
+        const aIsCalesita = a.id === CALESITA_ID || a.id.startsWith(CALESITA_ID);
+        const bIsCalesita = b.id === CALESITA_ID || b.id.startsWith(CALESITA_ID);
+        if (aIsCalesita) return -1;
+        if (bIsCalesita) return 1;
+      }
+
+      return parseDateStr(a.date).getTime() - parseDateStr(b.date).getTime();
     });
 
     const transformedEvents = sortedEvents.map((event) => ({

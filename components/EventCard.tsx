@@ -12,6 +12,7 @@ interface EventCardProps {
 }
 
 const SEMILLERO_ID = '990aa66a-d494-495d-8cb5-6785c84cb026';
+const CALESITA_ID = '76071439-0832-4146-98df-79bcbd93674a';
 
 export function EventCard({ event, onClick }: EventCardProps) {
   const router = useRouter();
@@ -129,13 +130,16 @@ export function EventCard({ event, onClick }: EventCardProps) {
   const schedules = getScheduleInfo();
   const instructors = getInstructors();
   const isSemillero = event.id === SEMILLERO_ID || event.id.startsWith(SEMILLERO_ID);
-
+  const isCalesita = event.id === CALESITA_ID || event.id.startsWith(CALESITA_ID);
+  const isRecommended = isSemillero || isCalesita;
   return (
     <Card
       isPressable
       onPress={handleCardClick}
       className={`w-full hover:scale-[1.01] transition-all duration-200 shadow-md hover:shadow-lg ${
-        isSemillero ? 'border border-green-500 shadow-green-500/20 bg-green-950/20' : ''
+        isRecommended
+          ? 'border border-green-500 shadow-green-500/20  dark:bg-green-950/20 bg-green-50'
+          : ''
       }`}
     >
       <CardBody className="p-5">
@@ -155,15 +159,14 @@ export function EventCard({ event, onClick }: EventCardProps) {
           </div>
 
           <div className="flex-1 min-w-0">
-                          {isSemillero && (
-                <div className="flex items-center gap-1 mb-2">
-                  <span className="text-xs font-semibold text-green-400 tracking-wide">
-                    ⭐ Recomendación TangoGuia
-                  </span>
-                </div>
-              )}
+            {isRecommended && (
+              <div className="flex items-center gap-1 mb-2">
+                <span className="text-xs font-semibold text-green-600 dark:text-green-400 tracking-wide">
+                  ⭐ Recomendación TangoGuia
+                </span>
+              </div>
+            )}
             <div className="flex flex-wrap gap-2 mb-3">
-
               {eventChips.map((chip, index) => (
                 <Chip
                   key={index}
