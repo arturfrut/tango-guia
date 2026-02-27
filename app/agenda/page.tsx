@@ -38,11 +38,11 @@ function EventsLoading() {
 }
 
 export default async function EventsPage(props: PageProps) {
-  const today = new Date(
-    new Intl.DateTimeFormat('sv-SE', {
-      timeZone: 'America/Argentina/Buenos_Aires',
-    }).format(new Date())
-  );
+  const todayStr = new Intl.DateTimeFormat('sv-SE', {
+    timeZone: 'America/Argentina/Buenos_Aires',
+  }).format(new Date());
+  const [y, m, d] = todayStr.split('-').map(Number);
+  const today = new Date(y, m - 1, d); 
   const initialEvents = await getInitialEvents(today);
 
   return (
