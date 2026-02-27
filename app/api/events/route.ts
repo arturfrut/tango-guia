@@ -2,6 +2,8 @@ import { CompleteEventData } from '@/app/types';
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 const SEMILLERO_ID = '990aa66a-d494-495d-8cb5-6785c84cb026';
 const CALESITA_ID = '76071439-0832-4146-98df-79bcbd93674a';
 
@@ -204,14 +206,16 @@ export async function GET(request: NextRequest) {
 
         const current = new Date(startDateObj);
         while (current <= endDateObj) {
-          if (current.getDay() === dayOfWeek && current > originalDate) {
+          if (current.getDay() === dayOfWeek) {
             const dateStr = formatDateStr(current); // ✅ fix
-            const eventCopy = {
-              ...recurringEvent,
-              date: dateStr,
-              id: `${recurringEvent.id}_${dateStr}`,
-            };
-            allEvents.push(eventCopy);
+            if (dateStr !== recurringEvent.date) {
+              const eventCopy = {
+                ...recurringEvent,
+                date: dateStr,
+                id: `${recurringEvent.id}_${dateStr}`,
+              };
+              allEvents.push(eventCopy);
+            }
           }
           current.setDate(current.getDate() + 1);
         }

@@ -31,7 +31,7 @@ export function EventsClient({ initialEvents, initialDate }: EventsClientProps) 
       : eventsData?.events || [];
 
   const isToday = (date: Date) => {
-    return format(date, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
+    return format(date, 'yyyy-MM-dd') === format(initialDate, 'yyyy-MM-dd');
   };
 
   return (

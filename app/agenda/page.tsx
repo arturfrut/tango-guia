@@ -1,7 +1,10 @@
+export const dynamic = 'force-dynamic';
+
 import { Suspense } from 'react';
 import { EventsClient } from './EventsClient';
 import { PageProps } from '@/.next/types/app/page';
 import { getInitialEvents } from './getInitialEvents';
+
 
 function EventsLoading() {
   return (

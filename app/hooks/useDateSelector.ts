@@ -10,13 +10,13 @@ interface UseDateSelectorProps {
 
 export function useDateSelector({ selectedDate, onDateSelect, initialDate }: UseDateSelectorProps) {
   const days = useMemo(() => {
-    const today = startOfDay(new Date());
+    const today = startOfDay(initialDate);
     const yesterday = addDays(today, -1);
     return Array.from({ length: 7 }, (_, i) => addDays(yesterday, i));
-  }, []);
+  }, [initialDate]);
 
   const isToday = (date: Date) => {
-    return format(date, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
+    return format(date, 'yyyy-MM-dd') === format(initialDate, 'yyyy-MM-dd');
   };
 
   const isSelected = (date: Date) => {
@@ -24,7 +24,7 @@ export function useDateSelector({ selectedDate, onDateSelect, initialDate }: Use
   };
 
   const isYesterday = (date: Date) => {
-    const yesterday = addDays(startOfDay(new Date()), -1);
+    const yesterday = addDays(startOfDay(initialDate), -1);
     return format(date, 'yyyy-MM-dd') === format(yesterday, 'yyyy-MM-dd');
   };
 
@@ -34,7 +34,6 @@ export function useDateSelector({ selectedDate, onDateSelect, initialDate }: Use
     return { dayName, dayNumber };
   };
 
-  // Mobile select formatting
   const formatDayOption = (date: Date) => {
     if (isYesterday(date)) {
       return 'Ayer';
@@ -47,7 +46,6 @@ export function useDateSelector({ selectedDate, onDateSelect, initialDate }: Use
     return format(date, "EEEE d 'de' MMMM", { locale: es });
   };
 
-  // Desktop button styling
   const getButtonVariant = (date: Date) => {
     if (isSelected(date)) return 'solid';
     if (isToday(date)) return 'bordered';
