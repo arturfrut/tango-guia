@@ -103,14 +103,25 @@ export function EventCard({ event, onClick }: EventCardProps) {
     if (event?.practice?.[0]?.practice_time) {
       schedules.push({
         name: 'Práctica',
-        time: `${event?.practice[0].practice_time.slice(0, 5)}${event.practice[0]?.practice_end_time ? ` - ${event?.practice[0]?.practice_end_time.slice(0, 5)}` : ''}`,
+        time: `${event.practice[0].practice_time.slice(0, 5)}${event.practice[0]?.practice_end_time ? ` - ${event.practice[0].practice_end_time.slice(0, 5)}` : ''}`,
       });
     }
 
-    if (event.milonga_pre_class?.class_time) {
+    const mpc = Array.isArray(event.milonga_pre_class)
+      ? event.milonga_pre_class[0]
+      : event.milonga_pre_class;
+
+    if (mpc?.class_time) {
       schedules.push({
         name: 'Clase',
-        time: `${event.milonga_pre_class.class_time.slice(0, 5)}${event.milonga_pre_class.class_end_time ? ` - ${event.milonga_pre_class.class_end_time.slice(0, 5)}` : ''}`,
+        time: `${mpc.class_time.slice(0, 5)}${mpc.class_end_time ? ` - ${mpc.class_end_time.slice(0, 5)}` : ''}`,
+      });
+    }
+
+    if (mpc?.milonga_start_time) {
+      schedules.push({
+        name: 'Milonga',
+        time: mpc.milonga_start_time.slice(0, 5),
       });
     }
 
@@ -132,13 +143,14 @@ export function EventCard({ event, onClick }: EventCardProps) {
   const isSemillero = event.id === SEMILLERO_ID || event.id.startsWith(SEMILLERO_ID);
   const isCalesita = event.id === CALESITA_ID || event.id.startsWith(CALESITA_ID);
   const isRecommended = isSemillero || isCalesita;
+
   return (
     <Card
       isPressable
       onPress={handleCardClick}
       className={`w-full hover:scale-[1.01] transition-all duration-200 shadow-md hover:shadow-lg ${
         isRecommended
-          ? 'border border-green-500 shadow-green-500/20  dark:bg-green-950/20 bg-green-50'
+          ? 'border border-green-500 shadow-green-500/20 dark:bg-green-950/20 bg-green-50'
           : ''
       }`}
     >
@@ -148,7 +160,7 @@ export function EventCard({ event, onClick }: EventCardProps) {
             <Avatar
               src={event.avatar_image_url}
               name={event.title}
-              className=" mr-2 w-20 h-20 sm:w-16 sm:h-16 md:w-32 md:h-32 text-lg font-bold"
+              className="mr-2 w-20 h-20 sm:w-16 sm:h-16 md:w-32 md:h-32 text-lg font-bold"
               classNames={{
                 base: event.avatar_image_url
                   ? ''

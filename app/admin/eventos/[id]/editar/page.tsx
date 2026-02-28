@@ -33,6 +33,13 @@ export default function EditarEventoPage() {
         return;
       }
 
+      const mpc = Array.isArray(data.milonga_pre_class)
+        ? data.milonga_pre_class[0]
+        : data.milonga_pre_class;
+
+      const milongaStartTime = mpc?.milonga_start_time || '';
+      const hasPreClass = !!(mpc?.class_time);
+
       const formData: EventFormData = {
         title: data.title || '',
         event_type: data.event_type || 'class',
@@ -70,12 +77,12 @@ export default function EditarEventoPage() {
               practice_end_time: data.practice[0].practice_end_time || '',
             }
           : null,
-        milonga_pre_class: data.milonga_pre_class
+        milonga_start_time: milongaStartTime,
+        milonga_pre_class: hasPreClass
           ? {
-              class_time: data.milonga_pre_class.class_time || '',
-              class_end_time: data.milonga_pre_class.class_end_time || '',
-              class_level: data.milonga_pre_class.class_level || 'all_levels',
-              milonga_start_time: data.milonga_pre_class.milonga_start_time || '',
+              class_time: mpc.class_time || '',
+              class_end_time: mpc.class_end_time || '',
+              class_level: mpc.class_level || 'all_levels',
             }
           : null,
         seminar_days: (data.seminar_days || [])

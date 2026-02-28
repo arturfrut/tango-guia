@@ -285,12 +285,25 @@ function EventDetail({ eventData, id }: { eventData: CompleteEventData; id: stri
       });
     }
 
-    if (eventData.milonga_pre_class && eventData.milonga_pre_class.class_time) {
+    const mpc = Array.isArray(eventData.milonga_pre_class)
+      ? (eventData.milonga_pre_class as any[])[0]
+      : eventData.milonga_pre_class;
+
+    if (mpc?.class_time) {
       schedule.push({
         name: 'Clase',
-        time: `${eventData.milonga_pre_class.class_time.slice(0, 5)}${eventData.milonga_pre_class.class_end_time ? ` - ${eventData.milonga_pre_class.class_end_time.slice(0, 5)}` : ''}`,
-        level: eventData.milonga_pre_class.class_level,
+        time: `${mpc.class_time.slice(0, 5)}${mpc.class_end_time ? ` - ${mpc.class_end_time.slice(0, 5)}` : ''}`,
+        level: mpc.class_level,
         type: 'class',
+      });
+    }
+
+    if (mpc?.milonga_start_time) {
+      schedule.push({
+        name: 'Milonga',
+        time: mpc.milonga_start_time.slice(0, 5),
+        level: null,
+        type: 'milonga',
       });
     }
 

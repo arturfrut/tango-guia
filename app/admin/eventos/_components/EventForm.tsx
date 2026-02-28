@@ -55,7 +55,6 @@ interface MilongaPreClassEntry {
   class_time: string;
   class_end_time: string;
   class_level: string;
-  milonga_start_time: string;
 }
 
 export interface EventFormData {
@@ -77,6 +76,7 @@ export interface EventFormData {
   // Type-specific
   classes: ClassEntry[];
   practice: PracticeEntry | null;
+  milonga_start_time: string;        
   milonga_pre_class: MilongaPreClassEntry | null;
   seminar_days: SeminarDayEntry[];
 }
@@ -97,6 +97,7 @@ const emptyForm: EventFormData = {
   pricing: [],
   classes: [],
   practice: null,
+  milonga_start_time: '',
   milonga_pre_class: null,
   seminar_days: [],
 };
@@ -185,10 +186,7 @@ export default function EventForm({ initialData, eventId, mode }: EventFormProps
   };
 
   const removeOrganizer = (index: number) =>
-    set(
-      'organizers',
-      form.organizers.filter((_, i) => i !== index)
-    );
+    set('organizers', form.organizers.filter((_, i) => i !== index));
 
   // ─── Pricing ───────────────────────────────────────────────────────────────
 
@@ -202,10 +200,7 @@ export default function EventForm({ initialData, eventId, mode }: EventFormProps
   };
 
   const removePricing = (index: number) =>
-    set(
-      'pricing',
-      form.pricing.filter((_, i) => i !== index)
-    );
+    set('pricing', form.pricing.filter((_, i) => i !== index));
 
   // ─── Classes ───────────────────────────────────────────────────────────────
 
@@ -228,10 +223,7 @@ export default function EventForm({ initialData, eventId, mode }: EventFormProps
   };
 
   const removeClass = (index: number) =>
-    set(
-      'classes',
-      form.classes.filter((_, i) => i !== index)
-    );
+    set('classes', form.classes.filter((_, i) => i !== index));
 
   // ─── Seminar Days ──────────────────────────────────────────────────────────
 
@@ -248,10 +240,7 @@ export default function EventForm({ initialData, eventId, mode }: EventFormProps
   };
 
   const removeSeminarDay = (index: number) =>
-    set(
-      'seminar_days',
-      form.seminar_days.filter((_, i) => i !== index)
-    );
+    set('seminar_days', form.seminar_days.filter((_, i) => i !== index));
 
   const addSeminarDayClass = (dayIndex: number) => {
     const updated = [...form.seminar_days];
@@ -330,7 +319,6 @@ export default function EventForm({ initialData, eventId, mode }: EventFormProps
       } else {
         const { error } = await supabase.from('tango_events').update(eventPayload).eq('id', id);
         if (error) throw error;
-        // Limpiar relaciones anteriores
         await supabase.from('event_organizers').delete().eq('event_id', id);
         await supabase.from('event_pricing').delete().eq('event_id', id);
         await supabase.from('event_classes').delete().eq('event_id', id);
@@ -378,10 +366,16 @@ export default function EventForm({ initialData, eventId, mode }: EventFormProps
       }
 
       if (form.event_type === 'milonga') {
-        if (form.milonga_pre_class) {
-          await supabase
-            .from('milonga_pre_classes')
-            .insert({ event_id: id, ...form.milonga_pre_class });
+        const hasMilongaTime = !!form.milonga_start_time;
+        const hasPreClass = !!form.milonga_pre_class;
+        if (hasMilongaTime || hasPreClass) {
+          await supabase.from('milonga_pre_classes').insert({
+            event_id: id,
+            milonga_start_time: form.milonga_start_time || null,
+            class_time: form.milonga_pre_class?.class_time || null,
+            class_end_time: form.milonga_pre_class?.class_end_time || null,
+            class_level: form.milonga_pre_class?.class_level || null,
+          });
         }
       }
 
@@ -448,11 +442,7 @@ export default function EventForm({ initialData, eventId, mode }: EventFormProps
                 isSelected={form.has_weekly_recurrence}
                 onValueChange={(v) => {
                   set('has_weekly_recurrence', v);
-                  if (v && form.date) {
-                    // mantener fecha existente
-                  } else if (!v) {
-                    set('date', '');
-                  }
+                  if (!v) set('date', '');
                 }}
               />
             </div>
@@ -537,252 +527,23 @@ export default function EventForm({ initialData, eventId, mode }: EventFormProps
           </CardBody>
         </Card>
 
-        {/* Organizadores */}
-        <Card>
-          <CardHeader className="flex justify-between items-center">
-            <h2 className="font-semibold">Organizadores</h2>
-            <Button
-              size="sm"
-              variant="flat"
-              startContent={<Plus className="w-3 h-3" />}
-              onPress={addOrganizer}
-            >
-              Agregar
-            </Button>
-          </CardHeader>
-          <Divider />
-          <CardBody className="gap-4">
-            {form.organizers.length === 0 && (
-              <p className="text-default-400 text-sm text-center">No hay organizadores agregados</p>
-            )}
-            {form.organizers.map((org, i) => (
-              <div key={i} className="border border-divider rounded-lg p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-default-500">Profesor de una sola vez</span>
-                    <Switch
-                      size="sm"
-                      isSelected={org.is_one_time_teacher}
-                      onValueChange={(v) => updateOrganizer(i, 'is_one_time_teacher', v)}
-                    />
-                  </div>
-                  <Button
-                    isIconOnly
-                    size="sm"
-                    variant="flat"
-                    color="danger"
-                    onPress={() => removeOrganizer(i)}
-                  >
-                    <Trash2 className="w-3 h-3" />
-                  </Button>
-                </div>
-                {org.is_one_time_teacher ? (
-                  <Input
-                    label="Nombre del profesor"
-                    value={org.one_time_teacher_name}
-                    onChange={(e) => updateOrganizer(i, 'one_time_teacher_name', e.target.value)}
-                  />
-                ) : (
-                  <Select
-                    label="Profesor"
-                    selectedKeys={org.teacher_id ? new Set([org.teacher_id]) : new Set()}
-                    onSelectionChange={(keys) => {
-                      const selected = Array.from(keys)[0];
-                      updateOrganizer(i, 'teacher_id', selected ?? null);
-                    }}
-                  >
-                    {teachers.map((t) => {
-                      const label = t.name + (t.nickname ? ` (${t.nickname})` : '');
-                      return (
-                        <SelectItem key={t.id} textValue={label}>
-                          {label}
-                        </SelectItem>
-                      );
-                    })}
-                  </Select>
-                )}
-              </div>
-            ))}
-          </CardBody>
-        </Card>
-
-        {/* Precios */}
-        <Card>
-          <CardHeader className="flex justify-between items-center">
-            <h2 className="font-semibold">Precios</h2>
-            <Button
-              size="sm"
-              variant="flat"
-              startContent={<Plus className="w-3 h-3" />}
-              onPress={addPricing}
-            >
-              Agregar
-            </Button>
-          </CardHeader>
-          <Divider />
-          <CardBody className="gap-4">
-            {form.pricing.length === 0 && (
-              <p className="text-default-400 text-sm text-center">No hay precios cargados</p>
-            )}
-            {form.pricing.map((p, i) => (
-              <div key={i} className="border border-divider rounded-lg p-4 space-y-3">
-                <div className="flex justify-end">
-                  <Button
-                    isIconOnly
-                    size="sm"
-                    variant="flat"
-                    color="danger"
-                    onPress={() => removePricing(i)}
-                  >
-                    <Trash2 className="w-3 h-3" />
-                  </Button>
-                </div>
-                <Input
-                  label="Tipo (ej: General, Estudiante)"
-                  value={p.price_type}
-                  onChange={(e) => updatePricing(i, 'price_type', e.target.value)}
-                />
-                <Input
-                  label="Precio"
-                  type="number"
-                  value={p.price}
-                  onChange={(e) => updatePricing(i, 'price', e.target.value)}
-                />
-                <Input
-                  label="Descripción"
-                  value={p.description}
-                  onChange={(e) => updatePricing(i, 'description', e.target.value)}
-                />
-              </div>
-            ))}
-          </CardBody>
-        </Card>
-
-        {/* Clases (type: class o special_event) */}
-        {(form.event_type === 'class' || form.event_type === 'special_event') && (
+        {form.event_type === 'milonga' && (
           <Card>
-            <CardHeader className="flex justify-between items-center">
-              <h2 className="font-semibold">Clases</h2>
-              <Button
-                size="sm"
-                variant="flat"
-                startContent={<Plus className="w-3 h-3" />}
-                onPress={addClass}
-              >
-                Agregar clase
-              </Button>
+            <CardHeader>
+              <h2 className="font-semibold">Horario de milonga</h2>
             </CardHeader>
             <Divider />
             <CardBody className="gap-4">
-              {form.classes.length === 0 && (
-                <p className="text-default-400 text-sm text-center">No hay clases agregadas</p>
-              )}
-              {form.classes.map((cls, i) => (
-                <div key={i} className="border border-divider rounded-lg p-4 space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium">Clase {i + 1}</span>
-                    <Button
-                      isIconOnly
-                      size="sm"
-                      variant="flat"
-                      color="danger"
-                      onPress={() => removeClass(i)}
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </Button>
-                  </div>
-                  <Input
-                    label="Nombre de la clase"
-                    value={cls.class_name}
-                    onChange={(e) => updateClass(i, 'class_name', e.target.value)}
-                  />
-                  <div className="grid grid-cols-2 gap-3">
-                    <Input
-                      label="Inicio"
-                      type="time"
-                      value={cls.start_time}
-                      onChange={(e) => updateClass(i, 'start_time', e.target.value)}
-                    />
-                    <Input
-                      label="Fin"
-                      type="time"
-                      value={cls.end_time}
-                      onChange={(e) => updateClass(i, 'end_time', e.target.value)}
-                    />
-                  </div>
-                  <Select
-                    label="Nivel"
-                    selectedKeys={[cls.class_level]}
-                    onSelectionChange={(keys) => updateClass(i, 'class_level', Array.from(keys)[0])}
-                  >
-                    {CLASS_LEVELS.map((l) => (
-                      <SelectItem key={l.key}>{l.label}</SelectItem>
-                    ))}
-                  </Select>
-                </div>
-              ))}
+              <Input
+                label="Inicio milonga"
+                type="time"
+                value={form.milonga_start_time}
+                onChange={(e) => set('milonga_start_time', e.target.value)}
+              />
             </CardBody>
           </Card>
         )}
 
-        {/* Práctica (type: class o practice) */}
-        {(form.event_type === 'class' || form.event_type === 'practice') && (
-          <Card>
-            <CardHeader className="flex justify-between items-center">
-              <h2 className="font-semibold">Práctica</h2>
-              {!form.practice && (
-                <Button
-                  size="sm"
-                  variant="flat"
-                  startContent={<Plus className="w-3 h-3" />}
-                  onPress={() => set('practice', { practice_time: '', practice_end_time: '' })}
-                >
-                  Agregar práctica
-                </Button>
-              )}
-            </CardHeader>
-            <Divider />
-            <CardBody className="gap-4">
-              {!form.practice ? (
-                <p className="text-default-400 text-sm text-center">No hay práctica cargada</p>
-              ) : (
-                <div className="border border-divider rounded-lg p-4 space-y-3">
-                  <div className="flex justify-end">
-                    <Button
-                      isIconOnly
-                      size="sm"
-                      variant="flat"
-                      color="danger"
-                      onPress={() => set('practice', null)}
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </Button>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <Input
-                      label="Inicio"
-                      type="time"
-                      value={form.practice.practice_time}
-                      onChange={(e) =>
-                        set('practice', { ...form.practice, practice_time: e.target.value })
-                      }
-                    />
-                    <Input
-                      label="Fin"
-                      type="time"
-                      value={form.practice.practice_end_time}
-                      onChange={(e) =>
-                        set('practice', { ...form.practice, practice_end_time: e.target.value })
-                      }
-                    />
-                  </div>
-                </div>
-              )}
-            </CardBody>
-          </Card>
-        )}
-
-        {/* Pre-clase milonga */}
         {form.event_type === 'milonga' && (
           <Card>
             <CardHeader className="flex justify-between items-center">
@@ -797,7 +558,6 @@ export default function EventForm({ initialData, eventId, mode }: EventFormProps
                       class_time: '',
                       class_end_time: '',
                       class_level: 'all_levels',
-                      milonga_start_time: '',
                     })
                   }
                 >
@@ -860,17 +620,203 @@ export default function EventForm({ initialData, eventId, mode }: EventFormProps
                       <SelectItem key={l.key}>{l.label}</SelectItem>
                     ))}
                   </Select>
+                </div>
+              )}
+            </CardBody>
+          </Card>
+        )}
+
+        {/* Organizadores */}
+        <Card>
+          <CardHeader className="flex justify-between items-center">
+            <h2 className="font-semibold">Organizadores</h2>
+            <Button
+              size="sm"
+              variant="flat"
+              startContent={<Plus className="w-3 h-3" />}
+              onPress={addOrganizer}
+            >
+              Agregar
+            </Button>
+          </CardHeader>
+          <Divider />
+          <CardBody className="gap-4">
+            {form.organizers.length === 0 && (
+              <p className="text-default-400 text-sm text-center">No hay organizadores agregados</p>
+            )}
+            {form.organizers.map((org, i) => (
+              <div key={i} className="border border-divider rounded-lg p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-default-500">Profesor de una sola vez</span>
+                    <Switch
+                      size="sm"
+                      isSelected={org.is_one_time_teacher}
+                      onValueChange={(v) => updateOrganizer(i, 'is_one_time_teacher', v)}
+                    />
+                  </div>
+                  <Button
+                    isIconOnly size="sm" variant="flat" color="danger"
+                    onPress={() => removeOrganizer(i)}
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </Button>
+                </div>
+                {org.is_one_time_teacher ? (
                   <Input
-                    label="Inicio milonga"
-                    type="time"
-                    value={form.milonga_pre_class.milonga_start_time}
-                    onChange={(e) =>
-                      set('milonga_pre_class', {
-                        ...form.milonga_pre_class,
-                        milonga_start_time: e.target.value,
-                      })
-                    }
+                    label="Nombre del profesor"
+                    value={org.one_time_teacher_name}
+                    onChange={(e) => updateOrganizer(i, 'one_time_teacher_name', e.target.value)}
                   />
+                ) : (
+                  <Select
+                    label="Profesor"
+                    selectedKeys={org.teacher_id ? new Set([org.teacher_id]) : new Set()}
+                    onSelectionChange={(keys) => {
+                      const selected = Array.from(keys)[0];
+                      updateOrganizer(i, 'teacher_id', selected ?? null);
+                    }}
+                  >
+                    {teachers.map((t) => {
+                      const label = t.name + (t.nickname ? ` (${t.nickname})` : '');
+                      return (
+                        <SelectItem key={t.id} textValue={label}>
+                          {label}
+                        </SelectItem>
+                      );
+                    })}
+                  </Select>
+                )}
+              </div>
+            ))}
+          </CardBody>
+        </Card>
+
+        {/* Precios */}
+        <Card>
+          <CardHeader className="flex justify-between items-center">
+            <h2 className="font-semibold">Precios</h2>
+            <Button
+              size="sm" variant="flat"
+              startContent={<Plus className="w-3 h-3" />}
+              onPress={addPricing}
+            >
+              Agregar
+            </Button>
+          </CardHeader>
+          <Divider />
+          <CardBody className="gap-4">
+            {form.pricing.length === 0 && (
+              <p className="text-default-400 text-sm text-center">No hay precios cargados</p>
+            )}
+            {form.pricing.map((p, i) => (
+              <div key={i} className="border border-divider rounded-lg p-4 space-y-3">
+                <div className="flex justify-end">
+                  <Button isIconOnly size="sm" variant="flat" color="danger" onPress={() => removePricing(i)}>
+                    <Trash2 className="w-3 h-3" />
+                  </Button>
+                </div>
+                <Input
+                  label="Tipo (ej: General, Estudiante)"
+                  value={p.price_type}
+                  onChange={(e) => updatePricing(i, 'price_type', e.target.value)}
+                />
+                <Input
+                  label="Precio"
+                  type="number"
+                  value={p.price}
+                  onChange={(e) => updatePricing(i, 'price', e.target.value)}
+                />
+                <Input
+                  label="Descripción"
+                  value={p.description}
+                  onChange={(e) => updatePricing(i, 'description', e.target.value)}
+                />
+              </div>
+            ))}
+          </CardBody>
+        </Card>
+
+        {/* Clases (type: class o special_event) */}
+        {(form.event_type === 'class' || form.event_type === 'special_event') && (
+          <Card>
+            <CardHeader className="flex justify-between items-center">
+              <h2 className="font-semibold">Clases</h2>
+              <Button size="sm" variant="flat" startContent={<Plus className="w-3 h-3" />} onPress={addClass}>
+                Agregar clase
+              </Button>
+            </CardHeader>
+            <Divider />
+            <CardBody className="gap-4">
+              {form.classes.length === 0 && (
+                <p className="text-default-400 text-sm text-center">No hay clases agregadas</p>
+              )}
+              {form.classes.map((cls, i) => (
+                <div key={i} className="border border-divider rounded-lg p-4 space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium">Clase {i + 1}</span>
+                    <Button isIconOnly size="sm" variant="flat" color="danger" onPress={() => removeClass(i)}>
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
+                  </div>
+                  <Input
+                    label="Nombre de la clase"
+                    value={cls.class_name}
+                    onChange={(e) => updateClass(i, 'class_name', e.target.value)}
+                  />
+                  <div className="grid grid-cols-2 gap-3">
+                    <Input label="Inicio" type="time" value={cls.start_time} onChange={(e) => updateClass(i, 'start_time', e.target.value)} />
+                    <Input label="Fin" type="time" value={cls.end_time} onChange={(e) => updateClass(i, 'end_time', e.target.value)} />
+                  </div>
+                  <Select
+                    label="Nivel"
+                    selectedKeys={[cls.class_level]}
+                    onSelectionChange={(keys) => updateClass(i, 'class_level', Array.from(keys)[0])}
+                  >
+                    {CLASS_LEVELS.map((l) => (<SelectItem key={l.key}>{l.label}</SelectItem>))}
+                  </Select>
+                </div>
+              ))}
+            </CardBody>
+          </Card>
+        )}
+
+        {/* Práctica (type: class o practice) */}
+        {(form.event_type === 'class' || form.event_type === 'practice') && (
+          <Card>
+            <CardHeader className="flex justify-between items-center">
+              <h2 className="font-semibold">Práctica</h2>
+              {!form.practice && (
+                <Button
+                  size="sm" variant="flat"
+                  startContent={<Plus className="w-3 h-3" />}
+                  onPress={() => set('practice', { practice_time: '', practice_end_time: '' })}
+                >
+                  Agregar práctica
+                </Button>
+              )}
+            </CardHeader>
+            <Divider />
+            <CardBody className="gap-4">
+              {!form.practice ? (
+                <p className="text-default-400 text-sm text-center">No hay práctica cargada</p>
+              ) : (
+                <div className="border border-divider rounded-lg p-4 space-y-3">
+                  <div className="flex justify-end">
+                    <Button isIconOnly size="sm" variant="flat" color="danger" onPress={() => set('practice', null)}>
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Input
+                      label="Inicio" type="time" value={form.practice.practice_time}
+                      onChange={(e) => set('practice', { ...form.practice, practice_time: e.target.value })}
+                    />
+                    <Input
+                      label="Fin" type="time" value={form.practice.practice_end_time}
+                      onChange={(e) => set('practice', { ...form.practice, practice_end_time: e.target.value })}
+                    />
+                  </div>
                 </div>
               )}
             </CardBody>
@@ -882,12 +828,7 @@ export default function EventForm({ initialData, eventId, mode }: EventFormProps
           <Card>
             <CardHeader className="flex justify-between items-center">
               <h2 className="font-semibold">Días del seminario</h2>
-              <Button
-                size="sm"
-                variant="flat"
-                startContent={<Plus className="w-3 h-3" />}
-                onPress={addSeminarDay}
-              >
+              <Button size="sm" variant="flat" startContent={<Plus className="w-3 h-3" />} onPress={addSeminarDay}>
                 Agregar día
               </Button>
             </CardHeader>
@@ -900,92 +841,47 @@ export default function EventForm({ initialData, eventId, mode }: EventFormProps
                 <div key={di} className="border border-divider rounded-lg p-4 space-y-3">
                   <div className="flex justify-between items-center">
                     <span className="font-medium">Día {day.day_number}</span>
-                    <Button
-                      isIconOnly
-                      size="sm"
-                      variant="flat"
-                      color="danger"
-                      onPress={() => removeSeminarDay(di)}
-                    >
+                    <Button isIconOnly size="sm" variant="flat" color="danger" onPress={() => removeSeminarDay(di)}>
                       <Trash2 className="w-3 h-3" />
                     </Button>
                   </div>
                   <Input
-                    label="Fecha"
-                    type="date"
-                    value={day.date}
+                    label="Fecha" type="date" value={day.date}
                     onChange={(e) => updateSeminarDay(di, 'date', e.target.value)}
                   />
                   <Input
-                    label="Tema"
-                    value={day.theme}
+                    label="Tema" value={day.theme}
                     onChange={(e) => updateSeminarDay(di, 'theme', e.target.value)}
                   />
-
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-default-500">Clases del día</span>
-                      <Button
-                        size="sm"
-                        variant="flat"
-                        startContent={<Plus className="w-3 h-3" />}
-                        onPress={() => addSeminarDayClass(di)}
-                      >
+                      <Button size="sm" variant="flat" startContent={<Plus className="w-3 h-3" />} onPress={() => addSeminarDayClass(di)}>
                         Agregar clase
                       </Button>
                     </div>
                     {day.classes.map((cls, ci) => (
-                      <div
-                        key={ci}
-                        className="border border-divider rounded-lg p-3 space-y-3 bg-default-50"
-                      >
+                      <div key={ci} className="border border-divider rounded-lg p-3 space-y-3 bg-default-50">
                         <div className="flex justify-between items-center">
                           <span className="text-sm font-medium">Clase {ci + 1}</span>
-                          <Button
-                            isIconOnly
-                            size="sm"
-                            variant="flat"
-                            color="danger"
-                            onPress={() => removeSeminarDayClass(di, ci)}
-                          >
+                          <Button isIconOnly size="sm" variant="flat" color="danger" onPress={() => removeSeminarDayClass(di, ci)}>
                             <Trash2 className="w-3 h-3" />
                           </Button>
                         </div>
                         <Input
-                          label="Nombre"
-                          value={cls.class_name}
-                          onChange={(e) =>
-                            updateSeminarDayClass(di, ci, 'class_name', e.target.value)
-                          }
+                          label="Nombre" value={cls.class_name}
+                          onChange={(e) => updateSeminarDayClass(di, ci, 'class_name', e.target.value)}
                         />
                         <div className="grid grid-cols-2 gap-3">
-                          <Input
-                            label="Inicio"
-                            type="time"
-                            value={cls.start_time}
-                            onChange={(e) =>
-                              updateSeminarDayClass(di, ci, 'start_time', e.target.value)
-                            }
-                          />
-                          <Input
-                            label="Fin"
-                            type="time"
-                            value={cls.end_time}
-                            onChange={(e) =>
-                              updateSeminarDayClass(di, ci, 'end_time', e.target.value)
-                            }
-                          />
+                          <Input label="Inicio" type="time" value={cls.start_time} onChange={(e) => updateSeminarDayClass(di, ci, 'start_time', e.target.value)} />
+                          <Input label="Fin" type="time" value={cls.end_time} onChange={(e) => updateSeminarDayClass(di, ci, 'end_time', e.target.value)} />
                         </div>
                         <Select
                           label="Nivel"
                           selectedKeys={[cls.class_level]}
-                          onSelectionChange={(keys) =>
-                            updateSeminarDayClass(di, ci, 'class_level', Array.from(keys)[0])
-                          }
+                          onSelectionChange={(keys) => updateSeminarDayClass(di, ci, 'class_level', Array.from(keys)[0])}
                         >
-                          {CLASS_LEVELS.map((l) => (
-                            <SelectItem key={l.key}>{l.label}</SelectItem>
-                          ))}
+                          {CLASS_LEVELS.map((l) => (<SelectItem key={l.key}>{l.label}</SelectItem>))}
                         </Select>
                       </div>
                     ))}
