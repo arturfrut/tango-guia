@@ -31,7 +31,7 @@ export function DateSelectorMobile({ selectedDate, onDateSelect, initialDate }: 
         variant="bordered"
         size="lg"
         selectionMode="single"
-        defaultSelectedKeys={[selectedValue]}
+        disallowEmptySelection
       >
         {days.map((day: Date) => {
           const dayKey = format(day, 'yyyy-MM-dd');
